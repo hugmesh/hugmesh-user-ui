@@ -1,0 +1,39 @@
+:host {
+  display: block;
+}
+
+fieldset {
+  border: 1px solid var(--hug-border, #ccc);
+  border-radius: 4px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+select {
+  display: block;
+  width: 100%;
+  max-width: 28rem;
+  margin-top: 0.5rem;
+}
+
+.hug-help {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--hug-muted, #666);
+}
+
+.hug-status {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.hug-error {
+  color: var(--hug-error, #c00);
+  margin-bottom: 0.75rem;
+}

@@ -1,0 +1,71 @@
+@use '../styles/tokens' as t;
+
+:host {
+  display: block;
+}
+
+.hug-user-self-block {
+  display: block;
+  padding: 1rem;
+
+  // Section-level explanation. Body-contrast primary guidance; WCAG palette + rem.
+  .intro {
+    max-width: 40rem;
+    color: var(--hug-text);
+  }
+
+  form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-block: 0.75rem;
+
+    // Per-control help text sits on its own full-width line in this wrapping
+    // horizontal form (the global .field-help styling supplies colour/size).
+    .field-help {
+      flex-basis: 100%;
+      margin-top: 0;
+    }
+  }
+
+  label {
+    font-weight: 600;
+    color: var(--hug-text);
+  }
+
+  input,
+  select {
+    background: var(--hug-bg-1);
+    color: var(--hug-text);
+    border: 1px solid var(--hug-border);
+    border-radius: t.$radius-sm;
+    padding: 0.5rem 0.75rem;
+
+    &[aria-invalid='true'] {
+      border-color: var(--hug-error);
+    }
+  }
+
+  button {
+    background: var(--hug-accent);
+    color: var(--hug-text);
+    border: 1px solid var(--hug-accent-soft);
+    border-radius: t.$radius-sm;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+
+    th,
+    td {
+      text-align: left;
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--hug-border);
+    }
+  }
+}

@@ -1,0 +1,66 @@
+@use '../styles/tokens' as t;
+
+:host {
+  display: block;
+}
+
+.hug-user-self-silence {
+  display: block;
+  padding: 1rem;
+
+  .intro {
+    max-width: 36rem;
+    color: var(--hug-text-muted);
+  }
+
+  .active-readback {
+    max-width: 36rem;
+    margin-block: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--hug-bg-1);
+    border: 1px solid var(--hug-border);
+    border-radius: t.$radius-sm;
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 32rem;
+    margin-block: 0.75rem 1.5rem;
+  }
+
+  label {
+    font-weight: 600;
+    color: var(--hug-text);
+  }
+
+  input {
+    background: var(--hug-bg-1);
+    color: var(--hug-text);
+    border: 1px solid var(--hug-border);
+    border-radius: t.$radius-sm;
+    padding: 0.5rem 0.75rem;
+
+    &[aria-invalid='true'] {
+      border-color: var(--hug-error);
+    }
+  }
+
+  button {
+    align-self: flex-start;
+    background: var(--hug-accent);
+    color: var(--hug-text);
+    border: 1px solid var(--hug-accent-soft);
+    border-radius: t.$radius-sm;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+  }
+}

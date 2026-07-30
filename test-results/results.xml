@@ -1,0 +1,301 @@
+<?xml version="1.0"?>
+<testsuite name="Chrome Headless 149.0.0.0 (Linux 0.0.0)" package="" timestamp="2026-07-23T23:31:08" id="0" hostname="localhost" tests="289" errors="0" failures="0" time="0.845">
+  <properties>
+    <property name="browser.fullName" value="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.0.0 Safari/537.36"/>
+  </properties>
+  <testcase name="accessible-name util (mirrors server ScreenReaderNames) accessibleName returns the display name even when non-ASCII if no screen-reader name exists" time="0.001" classname="accessible-name util (mirrors server ScreenReaderNames) accessibleName"/>
+  <testcase name="accessible-name util (mirrors server ScreenReaderNames) accessibleName announces the ASCII screenReaderName when present" time="0" classname="accessible-name util (mirrors server ScreenReaderNames) accessibleName"/>
+  <testcase name="accessible-name util (mirrors server ScreenReaderNames) accessibleName falls back to the displayName when no screen-reader name is set" time="0" classname="accessible-name util (mirrors server ScreenReaderNames) accessibleName"/>
+  <testcase name="accessible-name util (mirrors server ScreenReaderNames) accessibleName returns an empty string when nothing is available" time="0" classname="accessible-name util (mirrors server ScreenReaderNames) accessibleName"/>
+  <testcase name="accessible-name util (mirrors server ScreenReaderNames) defaultScreenReaderName (mirrors defaultFor) defaults an ASCII display name to itself" time="0" classname="accessible-name util (mirrors server ScreenReaderNames) defaultScreenReaderName (mirrors defaultFor)"/>
+  <testcase name="accessible-name util (mirrors server ScreenReaderNames) defaultScreenReaderName (mirrors defaultFor) returns null (=> PROMPT) for a non-ASCII display name" time="0" classname="accessible-name util (mirrors server ScreenReaderNames) defaultScreenReaderName (mirrors defaultFor)"/>
+  <testcase name="accessible-name util (mirrors server ScreenReaderNames) defaultScreenReaderName (mirrors defaultFor) returns null for null/blank display names" time="0" classname="accessible-name util (mirrors server ScreenReaderNames) defaultScreenReaderName (mirrors defaultFor)"/>
+  <testcase name="accessible-name util (mirrors server ScreenReaderNames) isPrintableAscii accepts the printable-ASCII range U+0020..U+007E" time="0" classname="accessible-name util (mirrors server ScreenReaderNames) isPrintableAscii"/>
+  <testcase name="accessible-name util (mirrors server ScreenReaderNames) isPrintableAscii rejects control chars the naive \x00-\x7F regex would wrongly accept" time="0.001" classname="accessible-name util (mirrors server ScreenReaderNames) isPrintableAscii"/>
+  <testcase name="accessible-name util (mirrors server ScreenReaderNames) isPrintableAscii treats null/undefined/empty as ASCII (optional field)" time="0" classname="accessible-name util (mirrors server ScreenReaderNames) isPrintableAscii"/>
+  <testcase name="accessible-name util (mirrors server ScreenReaderNames) isPrintableAscii rejects non-ASCII (accented Latin, other scripts, emoji)" time="0" classname="accessible-name util (mirrors server ScreenReaderNames) isPrintableAscii"/>
+  <testcase name="SessionsService DELETEs a session by id (url-encoded)" time="0.007" classname="SessionsService"/>
+  <testcase name="SessionsService lists my active sessions" time="0.002" classname="SessionsService"/>
+  <testcase name="SessionsService coerces a null list body to an empty array" time="0.002" classname="SessionsService"/>
+  <testcase name="card-sections (section model + serialisation) backward compatibility falls back to a single section on corrupt v2 JSON (never throws)" time="0" classname="card-sections (section model + serialisation) backward compatibility"/>
+  <testcase name="card-sections (section model + serialisation) backward compatibility decodes a LEGACY markdown + fenced-CSS body into one section + css" time="0.001" classname="card-sections (section model + serialisation) backward compatibility"/>
+  <testcase name="card-sections (section model + serialisation) backward compatibility decodes a LEGACY markdown-only body into a single section" time="0" classname="card-sections (section model + serialisation) backward compatibility"/>
+  <testcase name="card-sections (section model + serialisation) reorderSections moves an item and returns a new array (immutability)" time="0" classname="card-sections (section model + serialisation) reorderSections"/>
+  <testcase name="card-sections (section model + serialisation) encode/decode round-trip reorders sections then serialises the NEW order (drag-drop reflected in the body)" time="0" classname="card-sections (section model + serialisation) encode/decode round-trip"/>
+  <testcase name="card-sections (section model + serialisation) encode/decode round-trip preserves the ORDERED section structure (titles, content, orientation) + css" time="0" classname="card-sections (section model + serialisation) encode/decode round-trip"/>
+  <testcase name="card-sections (section model + serialisation) encode/decode round-trip emits a v2 marker + JSON sections + the unchanged CSS fence" time="0" classname="card-sections (section model + serialisation) encode/decode round-trip"/>
+  <testcase name="authInterceptor sends the bff_ cookie (withCredentials) and NO Authorization bearer header" time="0.001" classname="authInterceptor"/>
+  <testcase name="RecommendInstanceBlockComponent POSTs a trimmed {instance,reason} recommendation and clears the form on success" time="0.047" classname="RecommendInstanceBlockComponent"/>
+  <testcase name="RecommendInstanceBlockComponent surfaces a friendly message when the recommendation fails" time="0.003" classname="RecommendInstanceBlockComponent"/>
+  <testcase name="RecommendInstanceBlockComponent blocks submit + announces an alert when the instance is blank" time="0.003" classname="RecommendInstanceBlockComponent"/>
+  <testcase name="RecommendInstanceBlockComponent accessibility wires the instance, reason and submit controls to visible help text" time="0.002" classname="RecommendInstanceBlockComponent accessibility"/>
+  <testcase name="RecommendInstanceBlockComponent accessibility associates the instance + reason fields with &lt;label for>" time="0.002" classname="RecommendInstanceBlockComponent accessibility"/>
+  <testcase name="RecommendInstanceBlockComponent platform-role gate (no MATRIX/MASTODON role) disables submit + explains the gate, and never POSTs, for a plain user" time="0.004" classname="RecommendInstanceBlockComponent platform-role gate (no MATRIX/MASTODON role)"/>
+  <testcase name="app.routes (standalone dev shell) mounts the exposed USER_ROUTES as children of the root path" time="0" classname="app.routes (standalone dev shell)"/>
+  <testcase name="UserProfileService POSTs {oldPassword,newPassword} to /bff/user/profile/password" time="0.001" classname="UserProfileService"/>
+  <testcase name="UserProfileService POSTs to /bff/user/home-guide/dismiss to dismiss the guide (&quot;don't show again&quot;)" time="0.001" classname="UserProfileService"/>
+  <testcase name="UserProfileService GETs /bff/user/profile and pushes it onto profile$" time="0.001" classname="UserProfileService"/>
+  <testcase name="UserProfileService DELETEs /bff/user/home-guide/dismiss to re-show the guide" time="0.001" classname="UserProfileService"/>
+  <testcase name="UserProfileService PUTs the profile body to /bff/user/profile and updates profile$" time="0.001" classname="UserProfileService"/>
+  <testcase name="UserProfileService POSTs {email} to /bff/user/profile/email" time="0" classname="UserProfileService"/>
+  <testcase name="UserProfileService GETs the home-guide status with the guide query param and pushes onto homeGuide$" time="0.001" classname="UserProfileService"/>
+  <testcase name="NotificationPreferencesService load() pushes the result to prefs$ so subscribers see the update" time="0.001" classname="NotificationPreferencesService"/>
+  <testcase name="NotificationPreferencesService prefs$ starts as null before any load() call" time="0" classname="NotificationPreferencesService"/>
+  <testcase name="NotificationPreferencesService set() sends PUT /bff/user/notification-preferences with category+enabled body" time="0.001" classname="NotificationPreferencesService"/>
+  <testcase name="NotificationPreferencesService set() updates the matching entry in prefs$ with the server response" time="0.001" classname="NotificationPreferencesService"/>
+  <testcase name="NotificationPreferencesService load() sends GET /bff/user/notification-preferences and emits the result" time="0" classname="NotificationPreferencesService"/>
+  <testcase name="SelfBlockComponent accessibility wires the target, platform and add controls to visible help text" time="0.01" classname="SelfBlockComponent accessibility"/>
+  <testcase name="SelfBlockComponent accessibility labels inputs and gives remove buttons a descriptive aria-label" time="0.003" classname="SelfBlockComponent accessibility"/>
+  <testcase name="SelfBlockComponent lists my self-blocks on init and renders a row per block" time="0.002" classname="SelfBlockComponent"/>
+  <testcase name="SelfBlockComponent removes a self-block by id through the service" time="0.002" classname="SelfBlockComponent"/>
+  <testcase name="SelfBlockComponent adds a trimmed self-block with the chosen platform and refreshes" time="0.002" classname="SelfBlockComponent"/>
+  <testcase name="SelfBlockComponent blocks add + announces an alert when the target is blank" time="0.003" classname="SelfBlockComponent"/>
+  <testcase name="SelfBlockComponent renders the matrix|mastodon|internal platform options" time="0.001" classname="SelfBlockComponent"/>
+  <testcase name="NotificationPreferencesComponent reflects the loaded enabled state for optional categories" time="0.005" classname="NotificationPreferencesComponent"/>
+  <testcase name="NotificationPreferencesComponent renders account-restriction as checked and natively disabled (forced-on)" time="0.001" classname="NotificationPreferencesComponent"/>
+  <testcase name="NotificationPreferencesComponent account-restriction isEnabled() always returns true regardless of prefs" time="0.001" classname="NotificationPreferencesComponent"/>
+  <testcase name="NotificationPreferencesComponent loads preferences on init and renders a toggle for each category" time="0.001" classname="NotificationPreferencesComponent"/>
+  <testcase name="NotificationPreferencesComponent does NOT call service.set for account-restriction (forced-on)" time="0.001" classname="NotificationPreferencesComponent"/>
+  <testcase name="NotificationPreferencesComponent calls service.set and shows saved status on toggle change" time="0.001" classname="NotificationPreferencesComponent"/>
+  <testcase name="NotificationPreferencesComponent shows a load error alert when load() fails" time="0.001" classname="NotificationPreferencesComponent"/>
+  <testcase name="NotificationPreferencesComponent shows a save error and reverts the optimistic update when set() fails" time="0.002" classname="NotificationPreferencesComponent"/>
+  <testcase name="AppComponent (standalone dev shell) accessibility renders a focusable &lt;main id=&quot;main&quot;> landmark for the skip target" time="0.002" classname="AppComponent (standalone dev shell) accessibility"/>
+  <testcase name="AppComponent (standalone dev shell) accessibility exposes a skip link targeting the main landmark" time="0.001" classname="AppComponent (standalone dev shell) accessibility"/>
+  <testcase name="AppComponent (standalone dev shell) renders a router-outlet so USER_ROUTES can mount standalone" time="0" classname="AppComponent (standalone dev shell)"/>
+  <testcase name="AppComponent (standalone dev shell) creates the dev shell" time="0.001" classname="AppComponent (standalone dev shell)"/>
+  <testcase name="CardsComponent loads a card slug + pre-fills the editor with its decoded prior body when edited" time="0.032" classname="CardsComponent"/>
+  <testcase name="CardsComponent announces a failure status when delete fails (and does not crash)" time="0.008" classname="CardsComponent"/>
+  <testcase name="CardsComponent deletes my card via CardsService.delete and refreshes the list" time="0.008" classname="CardsComponent"/>
+  <testcase name="CardsComponent embeds the sandboxed WYSIWYG card editor (not a plain textarea body)" time="0.006" classname="CardsComponent"/>
+  <testcase name="CardsComponent lists my cards on init and renders a row per card" time="0.009" classname="CardsComponent"/>
+  <testcase name="CardsComponent sd-owncast-player publish gate (broadcast grant check) allows publish when sd-owncast-player is present AND grant is active" time="0.012" classname="CardsComponent sd-owncast-player publish gate (broadcast grant check)"/>
+  <testcase name="CardsComponent sd-owncast-player publish gate (broadcast grant check) does NOT call owncastService.myStream when card has no sd-owncast-player" time="0.018" classname="CardsComponent sd-owncast-player publish gate (broadcast grant check)"/>
+  <testcase name="CardsComponent sd-owncast-player publish gate (broadcast grant check) shows the helptext notice in the DOM when grant is denied" time="0.011" classname="CardsComponent sd-owncast-player publish gate (broadcast grant check)"/>
+  <testcase name="CardsComponent sd-owncast-player publish gate (broadcast grant check) disables the Publish button when grant is denied" time="0.011" classname="CardsComponent sd-owncast-player publish gate (broadcast grant check)"/>
+  <testcase name="CardsComponent sd-owncast-player publish gate (broadcast grant check) blocks publish and sets formError when sd-owncast-player is present but no grant" time="0.018" classname="CardsComponent sd-owncast-player publish gate (broadcast grant check)"/>
+  <testcase name="CardsComponent sd-owncast-player publish gate (broadcast grant check) blocks publish when grant BFF returns a status without visibility (no active grant)" time="0.01" classname="CardsComponent sd-owncast-player publish gate (broadcast grant check)"/>
+  <testcase name="CardsComponent blocks publish + announces an alert when slug or body is blank" time="0.008" classname="CardsComponent"/>
+  <testcase name="CardsComponent publishes the encoded editor source (markdown + scoped css) via CardsService.put" time="0.006" classname="CardsComponent"/>
+  <testcase name="CardsComponent accessibility wires the slug, entry-file, visibility and publish controls to visible help text" time="0.005" classname="CardsComponent accessibility"/>
+  <testcase name="CardsComponent accessibility per-row edit + delete are Tab-reachable buttons; activating delete (Enter/Space path) removes the card" time="0.039" classname="CardsComponent accessibility"/>
+  <testcase name="CardsComponent accessibility associates the metadata fields with &lt;label for> and gives edit buttons aria-labels" time="0.011" classname="CardsComponent accessibility"/>
+  <testcase name="CardsComponent tones the visible status line: failures carry .hug-error, successes do not" time="0.011" classname="CardsComponent"/>
+  <testcase name="CardsComponent opens the editor empty with a non-fatal status when the prior body read fails" time="0.012" classname="CardsComponent"/>
+  <testcase name="card-math (MathTeX via KaTeX, pre-rendered + script-free) renderTex / renderMathTag refuses trust commands (\href) — no LIVE href/link injected via TeX" time="0.004" classname="card-math (MathTeX via KaTeX, pre-rendered + script-free) renderTex / renderMathTag"/>
+  <testcase name="card-math (MathTeX via KaTeX, pre-rendered + script-free) renderTex / renderMathTag does not throw on malformed TeX (renders an error node)" time="0" classname="card-math (MathTeX via KaTeX, pre-rendered + script-free) renderTex / renderMathTag"/>
+  <testcase name="card-math (MathTeX via KaTeX, pre-rendered + script-free) renderTex / renderMathTag renders TeX to KaTeX HTML with accessible MathML and no script" time="0.002" classname="card-math (MathTeX via KaTeX, pre-rendered + script-free) renderTex / renderMathTag"/>
+  <testcase name="card-math (MathTeX via KaTeX, pre-rendered + script-free) extractMath / reinsertMath (placeholder channel) leaves text without math untouched" time="0" classname="card-math (MathTeX via KaTeX, pre-rendered + script-free) extractMath / reinsertMath (placeholder channel)"/>
+  <testcase name="card-math (MathTeX via KaTeX, pre-rendered + script-free) extractMath / reinsertMath (placeholder channel) replaces $$…$$ and \(…\) with opaque tokens, then restores the KaTeX HTML" time="0.001" classname="card-math (MathTeX via KaTeX, pre-rendered + script-free) extractMath / reinsertMath (placeholder channel)"/>
+  <testcase name="card-math (MathTeX via KaTeX, pre-rendered + script-free) extractMath / reinsertMath (placeholder channel) uses an unguessable per-pass token so user text cannot forge a placeholder" time="0" classname="card-math (MathTeX via KaTeX, pre-rendered + script-free) extractMath / reinsertMath (placeholder channel)"/>
+  <testcase name="CardsService treats a null list response as an empty cards$ (no crash)" time="0.001" classname="CardsService"/>
+  <testcase name="CardsService GETs /bff/user/cards for my cards and pushes them onto cards$" time="0" classname="CardsService"/>
+  <testcase name="CardsService GETs the versions of one card by slug (url-encoded)" time="0" classname="CardsService"/>
+  <testcase name="CardsService GETs the card body as text from /{slug}/body (owner-scoped read-my-card-body)" time="0.001" classname="CardsService"/>
+  <testcase name="CardsService PUTs an octet-stream entry file with optional query params and refreshes the list" time="0.002" classname="CardsService"/>
+  <testcase name="CardsService DELETEs /{slug} (url-encoded) and refreshes the list on success" time="0.001" classname="CardsService"/>
+  <testcase name="PreferencesService load() GETs /bff/user/preferences and pushes to prefs$" time="0.001" classname="PreferencesService"/>
+  <testcase name="PreferencesService set() PUTs {key, value} and returns the updated map" time="0.001" classname="PreferencesService"/>
+  <testcase name="PreferencesService load() pushes null initially and the map after the response" time="0.001" classname="PreferencesService"/>
+  <testcase name="NotificationsService list() sends GET /bff/user/notifications and emits the result" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService list() coerces a null response body to []" time="0.007" classname="NotificationsService"/>
+  <testcase name="NotificationsService parses the REAL Spring wire format — &quot;data:&quot; with NO space before the JSON" time="0.002" classname="NotificationsService"/>
+  <testcase name="NotificationsService parses a &quot;data: {...}&quot; SSE line into a prepended, unread UserNotification" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService liveStatus$ goes connecting → live on a successful connect" time="0" classname="NotificationsService"/>
+  <testcase name="NotificationsService unreadCount$ emits 0 before any list() call" time="0" classname="NotificationsService"/>
+  <testcase name="NotificationsService startLive() is a no-op when already running (single fetch call)" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService unreadCount$ reflects the number of notifications without a readAt" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService list() includes a limit query param when provided" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService list() pushes the result to notifications$ so subscribers see the update" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService markRead() optimistically stamps readAt and drops unreadCount$ to 0" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService markRead() URL-encodes the notification id" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService markRead() posts to /bff/user/notifications/{id}/read" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService stopLive() cancels a pending reconnect — no further fetch after the backoff" time="0.002" classname="NotificationsService"/>
+  <testcase name="NotificationsService the stream ending cleanly (server idle-timeout close) reports degraded, not silently live" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService a network error reports degraded and retries after the backoff" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService stopLive() aborts an in-flight connection and reports idle" time="0" classname="NotificationsService"/>
+  <testcase name="NotificationsService a non-ok response reports degraded and schedules a reconnect" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService stopLive() before startLive() is safe (no-op)" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService skips a malformed SSE data line without breaking the rest of the stream" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService startLive() fetches the events endpoint with cookie credentials and no bearer" time="0.001" classname="NotificationsService"/>
+  <testcase name="NotificationsService dedupes a live event whose id is already present" time="0.001" classname="NotificationsService"/>
+  <testcase name="parseSseField splits &quot;name:value&quot; with no space (the real Spring wire format)" time="0" classname="parseSseField"/>
+  <testcase name="parseSseField strips exactly one leading space, per the SSE spec allowance" time="0" classname="parseSseField"/>
+  <testcase name="parseSseField preserves a second leading space (only ONE is stripped)" time="0" classname="parseSseField"/>
+  <testcase name="parseSseField splits on the FIRST colon only (value may itself contain colons)" time="0" classname="parseSseField"/>
+  <testcase name="parseSseField returns null for a blank line (event terminator)" time="0" classname="parseSseField"/>
+  <testcase name="parseSseField returns null for a comment line (starts with &quot;:&quot;)" time="0" classname="parseSseField"/>
+  <testcase name="parseSseField returns null for a line with no colon at all" time="0" classname="parseSseField"/>
+  <testcase name="BlockService GETs /bff/user/blocks and pushes them onto blocks$" time="0.001" classname="BlockService"/>
+  <testcase name="BlockService DELETEs /bff/user/blocks/{id} (url-encoded) and refreshes the list" time="0" classname="BlockService"/>
+  <testcase name="BlockService POSTs {instance,reason} to /bff/user/recommend-instance-block" time="0.001" classname="BlockService"/>
+  <testcase name="BlockService POSTs {target,platform} to /bff/user/blocks and refreshes the list" time="0.001" classname="BlockService"/>
+  <testcase name="card-tags (provided Angular tag vocabulary) lowerProvidedTags sd-owncast-player uses placeholder when streamUrl is an empty string (falsy)" time="0.001" classname="card-tags (provided Angular tag vocabulary) lowerProvidedTags sd-owncast-player"/>
+  <testcase name="card-tags (provided Angular tag vocabulary) lowerProvidedTags sd-owncast-player lowers to a live player div with data-hls-src when streamUrl is provided" time="0" classname="card-tags (provided Angular tag vocabulary) lowerProvidedTags sd-owncast-player"/>
+  <testcase name="card-tags (provided Angular tag vocabulary) lowerProvidedTags sd-owncast-player IGNORES any attributes the card author places on sd-owncast-player (no injection)" time="0" classname="card-tags (provided Angular tag vocabulary) lowerProvidedTags sd-owncast-player"/>
+  <testcase name="card-tags (provided Angular tag vocabulary) lowerProvidedTags sd-owncast-player lowers to a placeholder div when no streamUrl is provided (editor preview)" time="0.001" classname="card-tags (provided Angular tag vocabulary) lowerProvidedTags sd-owncast-player"/>
+  <testcase name="card-tags (provided Angular tag vocabulary) lowerProvidedTags registers &lt;sd-math> as a math placeholder token (not raw KaTeX here)" time="0" classname="card-tags (provided Angular tag vocabulary) lowerProvidedTags"/>
+  <testcase name="card-tags (provided Angular tag vocabulary) lowerProvidedTags leaves no raw sd-* custom element behind for any provided tag" time="0" classname="card-tags (provided Angular tag vocabulary) lowerProvidedTags"/>
+  <testcase name="card-tags (provided Angular tag vocabulary) lowerProvidedTags lowers sd-card-section with align + title" time="0.001" classname="card-tags (provided Angular tag vocabulary) lowerProvidedTags"/>
+  <testcase name="card-tags (provided Angular tag vocabulary) lowerProvidedTags clamps bad attribute values to the documented default" time="0" classname="card-tags (provided Angular tag vocabulary) lowerProvidedTags"/>
+  <testcase name="card-tags (provided Angular tag vocabulary) catalogue documents exactly the sanctioned sd-* tags with snippets + attrs" time="0" classname="card-tags (provided Angular tag vocabulary) catalogue"/>
+  <testcase name="card-tags (provided Angular tag vocabulary) catalogue exposes the names as a Set for the sanitiser allow-list" time="0" classname="card-tags (provided Angular tag vocabulary) catalogue"/>
+  <testcase name="NotificationsComponent hides the degraded banner once the stream reconnects (live)" time="0.012" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent mark-as-read drops the unread count badge to 0" time="0.003" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent does not show the degraded banner while merely connecting" time="0.002" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent mark-as-read removes the .unread class and hides the button" time="0.002" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent adds the .unread class and mark-as-read button only for unread items" time="0.002" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent a live SSE push (via notifications$) renders without a manual reload" time="0.002" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent stops the live SSE subscription on destroy" time="0.002" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent starts the live SSE subscription after the initial load" time="0.002" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent shows a polite status message when mark-as-read fails" time="0.002" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent shows a friendly error alert when the list load fails" time="0.001" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent mark-as-read button carries a descriptive aria-label" time="0.002" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent loads notifications on init and renders one row per item" time="0.002" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent shows the empty-state message when there are no notifications" time="0.001" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent shows the unread badge with the correct count" time="0.002" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent shows the honest degraded banner when the live stream is unreachable" time="0.002" classname="NotificationsComponent"/>
+  <testcase name="NotificationsComponent does not call markRead when the notification is already read" time="0.002" classname="NotificationsComponent"/>
+  <testcase name="ConnectedAppsComponent DENY — caller WITHOUT an external-client role renders the surface aria-DISABLED (focusable) with helptext explaining the missing role" time="0.007" classname="ConnectedAppsComponent DENY — caller WITHOUT an external-client role"/>
+  <testcase name="ConnectedAppsComponent DENY — caller WITHOUT an external-client role does NOT fetch the list (mirrors the API gate, no 403-on-click)" time="0.001" classname="ConnectedAppsComponent DENY — caller WITHOUT an external-client role"/>
+  <testcase name="ConnectedAppsComponent ALLOW — caller WITH an external-client role surfaces a friendly message when the list load fails" time="0.001" classname="ConnectedAppsComponent ALLOW — caller WITH an external-client role"/>
+  <testcase name="ConnectedAppsComponent ALLOW — caller WITH an external-client role shows an empty-state message when there are no clients" time="0.001" classname="ConnectedAppsComponent ALLOW — caller WITH an external-client role"/>
+  <testcase name="ConnectedAppsComponent ALLOW — caller WITH an external-client role gives the revoke button a descriptive aria-label and revokes through the service" time="0.001" classname="ConnectedAppsComponent ALLOW — caller WITH an external-client role"/>
+  <testcase name="ConnectedAppsComponent ALLOW — caller WITH an external-client role fetches and renders a row per connected client" time="0.001" classname="ConnectedAppsComponent ALLOW — caller WITH an external-client role"/>
+  <testcase name="SelfSilenceComponent activates a future self-silence (converting local time to ISO) and refreshes" time="0.012" classname="SelfSilenceComponent"/>
+  <testcase name="SelfSilenceComponent surfaces a friendly message when activate fails" time="0.002" classname="SelfSilenceComponent"/>
+  <testcase name="SelfSilenceComponent rejects a past/empty end time with a role=alert before calling the BFF" time="0.002" classname="SelfSilenceComponent"/>
+  <testcase name="SelfSilenceComponent while already silenced the un-hide action is a Tab-reachable button that cancels when activated (Enter/Space path)" time="0.002" classname="SelfSilenceComponent while already silenced"/>
+  <testcase name="SelfSilenceComponent while already silenced cancels the active silence (un-hide now)" time="0.001" classname="SelfSilenceComponent while already silenced"/>
+  <testcase name="SelfSilenceComponent while already silenced guards activate() at the method level (no BFF call while already silenced)" time="0.002" classname="SelfSilenceComponent while already silenced"/>
+  <testcase name="SelfSilenceComponent while already silenced emails a moderator to restore sooner (self-silence-appeal write)" time="0.002" classname="SelfSilenceComponent while already silenced"/>
+  <testcase name="SelfSilenceComponent while already silenced shows the auto-clear wake window readback" time="0.001" classname="SelfSilenceComponent while already silenced"/>
+  <testcase name="SelfSilenceComponent while already silenced aria-DISABLES the activate control (focusable) with announced helptext" time="0.002" classname="SelfSilenceComponent while already silenced"/>
+  <testcase name="SelfSilenceComponent accessibility wires the until + reason fields to visible help text" time="0.002" classname="SelfSilenceComponent accessibility"/>
+  <testcase name="SelfSilenceComponent accessibility wires the un-hide + email-moderator actions to visible help text (while silenced)" time="0.001" classname="SelfSilenceComponent accessibility"/>
+  <testcase name="SelfSilenceComponent accessibility labels the inputs and announces status politely" time="0.002" classname="SelfSilenceComponent accessibility"/>
+  <testcase name="SelfSilenceComponent loads my self-silence status on init" time="0.002" classname="SelfSilenceComponent"/>
+  <testcase name="HomeComponent shows the getting-started guide on first visit (not dismissed)" time="0.004" classname="HomeComponent"/>
+  <testcase name="HomeComponent hides the guide when the preference says it was dismissed" time="0.001" classname="HomeComponent"/>
+  <testcase name="HomeComponent fails OPEN (shows the guide) when the preference load errors" time="0" classname="HomeComponent"/>
+  <testcase name="HomeComponent re-shows the guide via the BFF when asked" time="0" classname="HomeComponent"/>
+  <testcase name="HomeComponent &quot;don't show again&quot; dismisses via the BFF and hides the guide" time="0.001" classname="HomeComponent"/>
+  <testcase name="HomeComponent accessibility wires the dismiss control to visible help text via aria-describedby" time="0.001" classname="HomeComponent accessibility"/>
+  <testcase name="HomeComponent accessibility labels the view + guide region and exposes a polite status live region" time="0.001" classname="HomeComponent accessibility"/>
+  <testcase name="SessionService treats a mastodon-external-client role as holding an external-client role" time="0.001" classname="SessionService"/>
+  <testcase name="SessionService derives the external-client computeds from the role markers" time="0" classname="SessionService"/>
+  <testcase name="SessionService treats any logged-in session as the USER tier" time="0" classname="SessionService"/>
+  <testcase name="SessionService is logged out with no session" time="0.001" classname="SessionService"/>
+  <testcase name="SessionService mod and admin tiers are additive (mod never sees admin)" time="0" classname="SessionService"/>
+  <testcase name="SessionService a plain user holds NO external-client role (drives the disabled gate)" time="0.001" classname="SessionService"/>
+  <testcase name="CardEditorComponent (draggable section builder) provided tags + MathTeX in the preview inserts a provided-tag snippet into the active section from the palette" time="0.005" classname="CardEditorComponent (draggable section builder) provided tags + MathTeX in the preview"/>
+  <testcase name="CardEditorComponent (draggable section builder) provided tags + MathTeX in the preview renders a provided &lt;sd-math> tag to KaTeX, and STILL strips a &lt;script>" time="0.007" classname="CardEditorComponent (draggable section builder) provided tags + MathTeX in the preview"/>
+  <testcase name="CardEditorComponent (draggable section builder) provided tags + MathTeX in the preview renders a provided &lt;sd-callout> to safe class-tagged markup" time="0.007" classname="CardEditorComponent (draggable section builder) provided tags + MathTeX in the preview"/>
+  <testcase name="CardEditorComponent (draggable section builder) accessibility exposes a keyboard-operable tag palette of real &lt;button>s" time="0.011" classname="CardEditorComponent (draggable section builder) accessibility"/>
+  <testcase name="CardEditorComponent (draggable section builder) accessibility reflects alignment selection via aria-pressed" time="0.011" classname="CardEditorComponent (draggable section builder) accessibility"/>
+  <testcase name="CardEditorComponent (draggable section builder) accessibility gives each section a drag handle button AND explicit Move up/down controls" time="0.008" classname="CardEditorComponent (draggable section builder) accessibility"/>
+  <testcase name="CardEditorComponent (draggable section builder) accessibility labels the section title/body fields and names the preview region" time="0.008" classname="CardEditorComponent (draggable section builder) accessibility"/>
+  <testcase name="CardEditorComponent (draggable section builder) sandboxed preview (security — unchanged two-wall guarantee) scopes user CSS so a host-escape rule cannot restyle the shell" time="0.015" classname="CardEditorComponent (draggable section builder) sandboxed preview (security — unchanged two-wall guarantee)"/>
+  <testcase name="CardEditorComponent (draggable section builder) sandboxed preview (security — unchanged two-wall guarantee) neutralises a &lt;script>/onerror host-escape attempt typed into a section" time="0.013" classname="CardEditorComponent (draggable section builder) sandboxed preview (security — unchanged two-wall guarantee)"/>
+  <testcase name="CardEditorComponent (draggable section builder) sandboxed preview (security — unchanged two-wall guarantee) renders the preview in an iframe with an EMPTY sandbox (no scripts, no same-origin)" time="0.008" classname="CardEditorComponent (draggable section builder) sandboxed preview (security — unchanged two-wall guarantee)"/>
+  <testcase name="CardEditorComponent (draggable section builder) sections + draggable orientation REORDERS sections via move() — updates the model AND the serialised card body" time="0.013" classname="CardEditorComponent (draggable section builder) sections + draggable orientation"/>
+  <testcase name="CardEditorComponent (draggable section builder) sections + draggable orientation starts with one section and can add more" time="0.008" classname="CardEditorComponent (draggable section builder) sections + draggable orientation"/>
+  <testcase name="CardEditorComponent (draggable section builder) sections + draggable orientation updates a section orientation (align + columns)" time="0.007" classname="CardEditorComponent (draggable section builder) sections + draggable orientation"/>
+  <testcase name="CardEditorComponent (draggable section builder) sections + draggable orientation removing the last remaining section leaves one empty section (never zero)" time="0.005" classname="CardEditorComponent (draggable section builder) sections + draggable orientation"/>
+  <testcase name="CardEditorComponent (draggable section builder) keyboard operability (WCAG 2.1.1) Add section + palette + per-section controls are all Tab-reachable buttons" time="0.005" classname="CardEditorComponent (draggable section builder) keyboard operability (WCAG 2.1.1)"/>
+  <testcase name="CardEditorComponent (draggable section builder) keyboard operability (WCAG 2.1.1) disables the boundary Move controls so keyboard focus skips no-op directions" time="0.004" classname="CardEditorComponent (draggable section builder) keyboard operability (WCAG 2.1.1)"/>
+  <testcase name="CardEditorComponent (draggable section builder) keyboard operability (WCAG 2.1.1) activating a palette button (Enter/Space path) inserts the snippet into the focused section" time="0.016" classname="CardEditorComponent (draggable section builder) keyboard operability (WCAG 2.1.1)"/>
+  <testcase name="CardEditorComponent (draggable section builder) keyboard operability (WCAG 2.1.1) activating Move down via the button (the Enter/Space path) reorders the section" time="0.021" classname="CardEditorComponent (draggable section builder) keyboard operability (WCAG 2.1.1)"/>
+  <testcase name="CardEditorComponent (draggable section builder) document API round-trip legacy setSource()/source() still work (single-section bridge)" time="0.005" classname="CardEditorComponent (draggable section builder) document API round-trip"/>
+  <testcase name="CardEditorComponent (draggable section builder) document API round-trip document()/setDocument() expose and seed the section state" time="0.005" classname="CardEditorComponent (draggable section builder) document API round-trip"/>
+  <testcase name="ConnectedClientsService DELETEs a client by id (url-encoded)" time="0.001" classname="ConnectedClientsService"/>
+  <testcase name="ConnectedClientsService coerces a null list body to an empty array" time="0" classname="ConnectedClientsService"/>
+  <testcase name="ConnectedClientsService lists my connected clients" time="0.001" classname="ConnectedClientsService"/>
+  <testcase name="SelfSilenceService maps a 204 status response to null" time="0.001" classname="SelfSilenceService"/>
+  <testcase name="SelfSilenceService POSTs email-mod with the reason" time="0" classname="SelfSilenceService"/>
+  <testcase name="SelfSilenceService POSTs cancel (204)" time="0.001" classname="SelfSilenceService"/>
+  <testcase name="SelfSilenceService returns the body for a 200 active silence" time="0" classname="SelfSilenceService"/>
+  <testcase name="SelfSilenceService POSTs activate with expiresAt + reason" time="0" classname="SelfSilenceService"/>
+  <testcase name="ProfileComponent accessibility wires every control to visible help text via aria-describedby" time="0.013" classname="ProfileComponent accessibility"/>
+  <testcase name="ProfileComponent accessibility associates each profile input with a &lt;label for>" time="0.003" classname="ProfileComponent accessibility"/>
+  <testcase name="ProfileComponent POSTs a password change and clears the fields on success" time="0.002" classname="ProfileComponent"/>
+  <testcase name="ProfileComponent POSTs a trimmed email change and clears the field on success" time="0.006" classname="ProfileComponent"/>
+  <testcase name="ProfileComponent blocks save + announces an alert when display name is blank" time="0.003" classname="ProfileComponent"/>
+  <testcase name="ProfileComponent PUTs a trimmed profile (incl. visibility + vanity toggle) on save" time="0.005" classname="ProfileComponent"/>
+  <testcase name="ProfileComponent requires both passwords before calling the BFF" time="0.005" classname="ProfileComponent"/>
+  <testcase name="ProfileComponent loads my profile on init and binds it to the form model" time="0.006" classname="ProfileComponent"/>
+  <testcase name="ProfileComponent surfaces a friendly message when profile load fails" time="0.006" classname="ProfileComponent"/>
+  <testcase name="ProfileComponent screenReaderName rejects a non-printable-ASCII screen-reader name before calling the BFF" time="0.006" classname="ProfileComponent screenReaderName"/>
+  <testcase name="ProfileComponent screenReaderName previews the ASCII screen-reader name as the announced aria-label" time="0.005" classname="ProfileComponent screenReaderName"/>
+  <testcase name="ProfileComponent screenReaderName PROMPTS (does not auto-fill) when the display name is non-ASCII" time="0.005" classname="ProfileComponent screenReaderName"/>
+  <testcase name="ProfileComponent screenReaderName blocks save until a non-ASCII display name has an ASCII screen-reader name" time="0.006" classname="ProfileComponent screenReaderName"/>
+  <testcase name="ProfileComponent screenReaderName PRESERVES a custom screen-reader name when the display name changes" time="0.005" classname="ProfileComponent screenReaderName"/>
+  <testcase name="ProfileComponent screenReaderName default-fills the screen-reader name from an ASCII display name" time="0.005" classname="ProfileComponent screenReaderName"/>
+  <testcase name="SessionsComponent surfaces a role=alert error when the list load fails" time="0.007" classname="SessionsComponent"/>
+  <testcase name="SessionsComponent surfaces a role=alert error when a revoke fails" time="0.002" classname="SessionsComponent"/>
+  <testcase name="SessionsComponent gives the revoke button a descriptive aria-label and revokes through the service" time="0.002" classname="SessionsComponent"/>
+  <testcase name="SessionsComponent shows an empty-state message when there are no sessions" time="0.001" classname="SessionsComponent"/>
+  <testcase name="SessionsComponent renders the sessions container view" time="0.002" classname="SessionsComponent"/>
+  <testcase name="SessionsComponent fetches and renders a row per active session" time="0.002" classname="SessionsComponent"/>
+  <testcase name="KATEX_CSS (generated, base64-inlined minimal font subset) never contains a relative fonts/ URL (cannot resolve in a null-origin srcdoc)" time="0" classname="KATEX_CSS (generated, base64-inlined minimal font subset)"/>
+  <testcase name="KATEX_CSS (generated, base64-inlined minimal font subset) is inert text: no &lt;script> and no javascript: vector" time="0" classname="KATEX_CSS (generated, base64-inlined minimal font subset)"/>
+  <testcase name="KATEX_CSS (generated, base64-inlined minimal font subset) still positions every atom via the structural (non-font) CSS" time="0.001" classname="KATEX_CSS (generated, base64-inlined minimal font subset)"/>
+  <testcase name="KATEX_CSS (generated, base64-inlined minimal font subset) inlined font-face declarations carry a real (non-empty) base64 payload" time="0" classname="KATEX_CSS (generated, base64-inlined minimal font subset)"/>
+  <testcase name="KATEX_CSS (generated, base64-inlined minimal font subset) base64 data-URI-inlines the minimal font subset as real @font-face src" time="0.001" classname="KATEX_CSS (generated, base64-inlined minimal font subset)"/>
+  <testcase name="USER_ROUTES (exposed ./routes federation contract) exposes exactly the user views the host expects" time="0" classname="USER_ROUTES (exposed ./routes federation contract)"/>
+  <testcase name="USER_ROUTES (exposed ./routes federation contract) declares every route with a component (no dead routes)" time="0" classname="USER_ROUTES (exposed ./routes federation contract)"/>
+  <testcase name="USER_ROUTES (exposed ./routes federation contract) contains no duplicate paths" time="0" classname="USER_ROUTES (exposed ./routes federation contract)"/>
+  <testcase name="USER_ROUTES (exposed ./routes federation contract) exposes the welcome/getting-started guide at the empty path (default mount point)" time="0" classname="USER_ROUTES (exposed ./routes federation contract)"/>
+  <testcase name="USER_ROUTES (exposed ./routes federation contract) wires each feature route to its dedicated component" time="0" classname="USER_ROUTES (exposed ./routes federation contract)"/>
+  <testcase name="card-sanitize buildCardPreview — full sandboxed section document concatenates sections in order, inlines scoped KaTeX CSS, stays script-free" time="0.003" classname="card-sanitize buildCardPreview — full sandboxed section document"/>
+  <testcase name="card-sanitize renderSection — orientation applies alignment + column orientation classes" time="0" classname="card-sanitize renderSection — orientation"/>
+  <testcase name="card-sanitize renderSafeCardHtml — sd-owncast-player (platform-supplied HLS URL) survives the sanitiser: data-hls-src is preserved on the lowered &lt;div>" time="0.001" classname="card-sanitize renderSafeCardHtml — sd-owncast-player (platform-supplied HLS URL)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — sd-owncast-player (platform-supplied HLS URL) lowers to a player div with the platform data-hls-src when streamUrl is supplied" time="0" classname="card-sanitize renderSafeCardHtml — sd-owncast-player (platform-supplied HLS URL)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — sd-owncast-player (platform-supplied HLS URL) lowers to a placeholder when no streamUrl is passed" time="0.001" classname="card-sanitize renderSafeCardHtml — sd-owncast-player (platform-supplied HLS URL)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — sd-owncast-player (platform-supplied HLS URL) does NOT propagate author-supplied src/data-hls-src from card markup" time="0" classname="card-sanitize renderSafeCardHtml — sd-owncast-player (platform-supplied HLS URL)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — sd-owncast-player (platform-supplied HLS URL) still strips a &lt;script> adjacent to sd-owncast-player" time="0" classname="card-sanitize renderSafeCardHtml — sd-owncast-player (platform-supplied HLS URL)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — MathTeX (KaTeX, pre-rendered, script-free) renders an &lt;sd-math> tag to KaTeX HTML with accessible MathML" time="0.001" classname="card-sanitize renderSafeCardHtml — MathTeX (KaTeX, pre-rendered, script-free)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — MathTeX (KaTeX, pre-rendered, script-free) does not throw on malformed TeX (renders an error node instead)" time="0" classname="card-sanitize renderSafeCardHtml — MathTeX (KaTeX, pre-rendered, script-free)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — MathTeX (KaTeX, pre-rendered, script-free) does NOT execute a &lt;script> smuggled next to math (script stripped, math kept)" time="0" classname="card-sanitize renderSafeCardHtml — MathTeX (KaTeX, pre-rendered, script-free)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — MathTeX (KaTeX, pre-rendered, script-free) renders $$…$$ display math and \(…\) inline math delimiters" time="0.002" classname="card-sanitize renderSafeCardHtml — MathTeX (KaTeX, pre-rendered, script-free)"/>
+  <testcase name="card-sanitize escapeHtml escapes the five significant characters" time="0" classname="card-sanitize escapeHtml"/>
+  <testcase name="card-sanitize renderSafeCardHtml — provided tags (the sanctioned sd-* vocabulary) STILL strips on*= handlers and unknown tags around provided tags" time="0.001" classname="card-sanitize renderSafeCardHtml — provided tags (the sanctioned sd-* vocabulary)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — provided tags (the sanctioned sd-* vocabulary) clamps an out-of-list tone attribute to the documented default" time="0" classname="card-sanitize renderSafeCardHtml — provided tags (the sanctioned sd-* vocabulary)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — provided tags (the sanctioned sd-* vocabulary) lowers &lt;sd-columns count> and &lt;sd-divider>" time="0" classname="card-sanitize renderSafeCardHtml — provided tags (the sanctioned sd-* vocabulary)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — provided tags (the sanctioned sd-* vocabulary) STILL strips &lt;script> even when mixed with provided tags" time="0.001" classname="card-sanitize renderSafeCardHtml — provided tags (the sanctioned sd-* vocabulary)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — provided tags (the sanctioned sd-* vocabulary) escapes a section title (no markup injection via the title attribute)" time="0" classname="card-sanitize renderSafeCardHtml — provided tags (the sanctioned sd-* vocabulary)"/>
+  <testcase name="card-sanitize renderSafeCardHtml — provided tags (the sanctioned sd-* vocabulary) lowers &lt;sd-callout> to a class-tagged note div, keeping its text" time="0" classname="card-sanitize renderSafeCardHtml — provided tags (the sanctioned sd-* vocabulary)"/>
+  <testcase name="card-sanitize buildPreviewDoc (end-to-end sandboxed document) produces a script-free document with the scoped CSS and sanitised body" time="0.004" classname="card-sanitize buildPreviewDoc (end-to-end sandboxed document)"/>
+  <testcase name="card-sanitize scopeCss (host-restyle prevention) collapses body/html/:root to the card scope so the host shell is untouched" time="0" classname="card-sanitize scopeCss (host-restyle prevention)"/>
+  <testcase name="card-sanitize scopeCss (host-restyle prevention) scopes selectors inside @media but keeps the at-rule prelude" time="0.001" classname="card-sanitize scopeCss (host-restyle prevention)"/>
+  <testcase name="card-sanitize scopeCss (host-restyle prevention) strips &lt;/style> breakout, @import, expression() and javascript:" time="0" classname="card-sanitize scopeCss (host-restyle prevention)"/>
+  <testcase name="card-sanitize scopeCss (host-restyle prevention) prefixes plain selectors with the scope" time="0" classname="card-sanitize scopeCss (host-restyle prevention)"/>
+  <testcase name="card-sanitize renderMarkdown escapes raw HTML typed into the markdown (no passthrough)" time="0" classname="card-sanitize renderMarkdown"/>
+  <testcase name="card-sanitize renderMarkdown renders unordered and ordered lists" time="0.001" classname="card-sanitize renderMarkdown"/>
+  <testcase name="card-sanitize renderMarkdown drops javascript: markdown link targets, keeping the label" time="0" classname="card-sanitize renderMarkdown"/>
+  <testcase name="card-sanitize renderMarkdown renders headings, bold, italic and links" time="0" classname="card-sanitize renderMarkdown"/>
+  <testcase name="card-sanitize sanitizeHtml (XSS neutralisation) drops on* event-handler attributes (onerror/onclick)" time="0.001" classname="card-sanitize sanitizeHtml (XSS neutralisation)"/>
+  <testcase name="card-sanitize sanitizeHtml (XSS neutralisation) neutralises javascript: URLs on href (incl. with embedded control chars)" time="0" classname="card-sanitize sanitizeHtml (XSS neutralisation)"/>
+  <testcase name="card-sanitize sanitizeHtml (XSS neutralisation) removes inline style attributes (host-style escape vector)" time="0" classname="card-sanitize sanitizeHtml (XSS neutralisation)"/>
+  <testcase name="card-sanitize sanitizeHtml (XSS neutralisation) drops data: HTML URLs but allows inert data: images" time="0" classname="card-sanitize sanitizeHtml (XSS neutralisation)"/>
+  <testcase name="card-sanitize sanitizeHtml (XSS neutralisation) strips &lt;script> elements entirely" time="0" classname="card-sanitize sanitizeHtml (XSS neutralisation)"/>
+  <testcase name="card-sanitize sanitizeHtml (XSS neutralisation) strips &lt;iframe> (3rd-party frame) but keeps surrounding text" time="0" classname="card-sanitize sanitizeHtml (XSS neutralisation)"/>
+  <testcase name="card-sanitize sanitizeHtml (XSS neutralisation) unwraps unknown tags but keeps their text content" time="0" classname="card-sanitize sanitizeHtml (XSS neutralisation)"/>
+  <testcase name="card-sanitize sanitizeHtml (XSS neutralisation) keeps a normal https link and its text" time="0.001" classname="card-sanitize sanitizeHtml (XSS neutralisation)"/>
+  <testcase name="PreferencesComponent calls service.set and shows saved message on select change" time="0.006" classname="PreferencesComponent"/>
+  <testcase name="PreferencesComponent shows a save error when set() fails" time="0.002" classname="PreferencesComponent"/>
+  <testcase name="PreferencesComponent shows a load error and disables the select when load() fails" time="0.008" classname="PreferencesComponent"/>
+  <testcase name="PreferencesComponent loads preferences on init and reflects media.poison.default in the select" time="0.001" classname="PreferencesComponent"/>
+  <testcase name="PreferencesComponent shows the AI-cloak fieldset with all four mode options" time="0.001" classname="PreferencesComponent"/>
+  <testcase name="ProfileAvatarComponent renders the current avatar image when one is set" time="0.002" classname="ProfileAvatarComponent"/>
+  <testcase name="ProfileAvatarComponent renders the placeholder (not an image) when the user has no avatar" time="0.001" classname="ProfileAvatarComponent"/>
+  <testcase name="ProfileAvatarComponent surfaces a friendly message when the upload fails" time="0.003" classname="ProfileAvatarComponent"/>
+  <testcase name="ProfileAvatarComponent rejects an oversized image (> 5 MB) without calling the service" time="0.005" classname="ProfileAvatarComponent"/>
+  <testcase name="ProfileAvatarComponent rejects a non-image file with an error and does NOT call the service" time="0.006" classname="ProfileAvatarComponent"/>
+  <testcase name="ProfileAvatarComponent uploads through the service and adopts the returned profile on a valid image" time="0.002" classname="ProfileAvatarComponent"/>
+  <system-out>
+    <![CDATA[Chrome Headless 149.0.0.0 (Linux 0.0.0) WARN: 'Spec 'NotificationsService markRead() URL-encodes the notification id' has no expectations.'
+
+]]>
+  </system-out>
+  <system-err/>
+</testsuite>

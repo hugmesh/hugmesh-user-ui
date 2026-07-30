@@ -1,0 +1,75 @@
+<section
+  class="hug-user-sessions"
+  data-testid="sessions-view"
+  aria-labelledby="sessions-heading"
+>
+  <h2 id="sessions-heading">Active sessions</h2>
+
+  <p class="intro">
+    These are the devices and browsers currently signed in to your account. Revoke
+    any you no longer recognise to sign them out.
+  </p>
+
+  <!-- Polite live region for successful actions (revoke confirmations). Visible
+       while populated so a sighted user sees the confirmation; .sr (still in the
+       a11y tree) applied only while empty so no empty box renders. -->
+  <p
+    class="hug-status"
+    [class.sr]="!statusMessage()"
+    data-testid="sessions-status"
+    role="status"
+    aria-live="polite"
+  >{{ statusMessage() }}</p>
+
+  <!-- Assertive error live region: role=alert announces load/revoke failures. -->
+  <p
+    *ngIf="errorMessage()"
+    class="hug-error"
+    data-testid="sessions-error"
+    role="alert"
+  >{{ errorMessage() }}</p>
+
+  <!-- Empty state is gated on !errorMessage() so a load failure shows ONLY the
+       role=alert error, never the error AND a misleading "no sessions" line at
+       once. Copy dropped the word "other": the list includes THIS device (the
+       current session, marked "This device"), so a signed-in user is not
+       normally at zero — an empty list here means nothing came back. -->
+  <p
+    *ngIf="sessions().length === 0 && !errorMessage()"
+    data-testid="sessions-empty"
+  >
+    You have no active sessions to show.
+  </p>
+
+  <table
+    *ngIf="sessions().length > 0"
+    data-testid="sessions-rows"
+    aria-labelledby="sessions-heading"
+  >
+    <caption class="sr">My active login sessions: session, signed in, expires</caption>
+    <thead>
+      <tr>
+        <th scope="col">Session</th>
+        <th scope="col">Signed in</th>
+        <th scope="col">Expires</th>
+        <th scope="col"><span class="sr">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let s of sessions()" [attr.data-session-id]="s.id">
+        <td>{{ label(s) }}</td>
+        <td>{{ s.createdAt ? (s.createdAt | date: 'medium') : '—' }}</td>
+        <td>{{ s.expiresAt ? (s.expiresAt | date: 'medium') : '—' }}</td>
+        <td>
+          <button
+            type="button"
+            data-testid="session-revoke"
+            [attr.data-revoke]="s.id"
+            [attr.aria-label]="'Revoke session ' + label(s)"
+            (click)="revoke(s)"
+          >Revoke</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>

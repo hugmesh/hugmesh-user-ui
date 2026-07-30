@@ -1,0 +1,245 @@
+@use '../styles/tokens' as t;
+
+:host {
+  display: block;
+}
+
+.hug-card-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+
+  @media (max-width: t.$bp-md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.editor-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+label {
+  font-weight: 600;
+  color: var(--hug-text);
+  margin-top: 0.3rem;
+}
+
+input,
+textarea,
+select {
+  background: var(--hug-bg-1);
+  color: var(--hug-text);
+  border: 1px solid var(--hug-border);
+  border-radius: t.$radius-sm;
+  padding: 0.45rem 0.65rem;
+  font: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.hint {
+  margin: 0;
+  color: var(--hug-text-muted);
+  font-size: 0.85rem;
+
+  code {
+    // Brand mono stack (ui-monospace…) rather than the OS-generic `monospace`
+    // UA default — the token is now a real fixed-width family, not an Arial alias.
+    font-family: t.$font-mono;
+    color: var(--hug-accent-soft);
+  }
+}
+
+// ---- Provided-tag palette -----------------------------------------------------
+.tag-palette {
+  h4 {
+    margin: 0 0 0.25rem;
+    color: var(--hug-text);
+  }
+}
+
+.palette-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.palette-btn {
+  background: var(--hug-bg-1);
+  color: var(--hug-accent-soft);
+  border: 1px solid var(--hug-border);
+  border-radius: t.$radius-sm;
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+  font: inherit;
+
+  code {
+    // The palette button sets `font: inherit` (Arial), so give the sd-* tag
+    // sample an explicit brand mono family instead of proportional type.
+    font-family: t.$font-mono;
+    color: inherit;
+  }
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--hug-accent);
+  }
+}
+
+// ---- Sections -----------------------------------------------------------------
+.sections-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+
+  h4 {
+    margin: 0;
+    color: var(--hug-text);
+  }
+}
+
+.add-section {
+  background: var(--hug-accent);
+  color: #fff;
+  border: 1px solid var(--hug-accent-soft);
+  border-radius: t.$radius-sm;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.section-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.section-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  background: var(--hug-bg-1);
+  border: 1px solid var(--hug-border);
+  border-radius: t.$radius-md;
+  padding: 0.6rem;
+}
+
+.section-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  button {
+    min-width: 2rem;
+    background: var(--hug-bg-0);
+    color: var(--hug-text);
+    border: 1px solid var(--hug-border);
+    border-radius: t.$radius-sm;
+    padding: 0.25rem 0.45rem;
+    cursor: pointer;
+    font: inherit;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--hug-accent-soft);
+      outline-offset: 1px;
+    }
+  }
+
+  .drag-handle {
+    cursor: grab;
+  }
+
+  .section-index {
+    margin-left: auto;
+    color: var(--hug-text-muted);
+    font-size: 0.85rem;
+  }
+
+  .remove-section {
+    color: var(--hug-error);
+  }
+}
+
+.orientation {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
+
+  .orientation-label,
+  .cols-label {
+    color: var(--hug-text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .align-btn {
+    background: var(--hug-bg-0);
+    color: var(--hug-text);
+    border: 1px solid var(--hug-border);
+    border-radius: t.$radius-sm;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    font: inherit;
+    text-transform: capitalize;
+
+    &[aria-pressed='true'] {
+      background: var(--hug-accent);
+      border-color: var(--hug-accent-soft);
+      color: #fff;
+    }
+  }
+
+  .cols-select {
+    padding: 0.25rem 0.4rem;
+  }
+}
+
+// CDK drag-drop affordances.
+.cdk-drag-preview {
+  border-radius: t.$radius-md;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.4;
+}
+
+.cdk-drag-animating,
+.section-list.cdk-drop-list-dragging .section-card:not(.cdk-drag-placeholder) {
+  transition: transform 0.2s cubic-bezier(0, 0, 0.2, 1);
+}
+
+// ---- Preview ------------------------------------------------------------------
+.preview-pane {
+  h4 {
+    margin: 0 0 0.4rem;
+    color: var(--hug-text);
+  }
+}
+
+.preview-frame {
+  width: 100%;
+  min-height: 22rem;
+  background: #ffffff;
+  border: 1px solid var(--hug-border);
+  border-radius: t.$radius-sm;
+}

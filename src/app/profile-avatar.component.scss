@@ -1,0 +1,76 @@
+@use '../styles/tokens' as t;
+
+:host {
+  display: block;
+}
+
+.hug-profile-avatar {
+  display: block;
+  padding: 1rem 0;
+
+  .intro {
+    max-width: 36rem;
+    color: var(--hug-text-muted);
+  }
+
+  .avatar-display {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    margin-block: 0.75rem;
+
+    img {
+      width: 6rem;
+      height: 6rem;
+      object-fit: cover;
+      border-radius: t.$radius-sm;
+      border: 1px solid var(--hug-border);
+    }
+
+    .avatar-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 6rem;
+      height: 6rem;
+      border-radius: t.$radius-sm;
+      border: 1px dashed var(--hug-border);
+      color: var(--hug-text-muted);
+      background: var(--hug-bg-1);
+    }
+
+    .avatar-preview {
+      opacity: 0.85;
+    }
+  }
+
+  .avatar-upload {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 32rem;
+
+    label {
+      font-weight: 600;
+      color: var(--hug-text);
+    }
+
+    input[aria-invalid='true'] {
+      outline: 1px solid var(--hug-error);
+    }
+  }
+
+  .field-help {
+    color: var(--hug-text-muted);
+    font-size: 0.9rem;
+  }
+
+  .field-error {
+    color: var(--hug-error);
+  }
+
+  .field-message {
+    color: var(--hug-text-muted);
+  }
+}

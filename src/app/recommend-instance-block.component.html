@@ -1,0 +1,105 @@
+<section
+  class="hug-user-recommend-instance-block"
+  data-testid="recommend-instance-block-view"
+  aria-labelledby="recommend-heading"
+>
+  <h2 id="recommend-heading">Recommend an instance block</h2>
+  <p>Flag a problem instance for moderator review. This is a recommendation, not a block.</p>
+
+  <!-- GATED: without a homeserver platform role the BFF (BlockController) refuses
+       this with 403 (hasAnyRole MATRIX/MASTODON — only a platform participant may
+       start the USER→MOD→ADMIN chain). Mirror that gate in the UI with an explicit
+       explanation instead of a fully-enabled form whose submit silently fails —
+       the same disabled+explain convention connected-apps uses. -->
+  <p
+    *ngIf="!hasPlatformRole()"
+    class="intro"
+    data-testid="recommend-gate-notice"
+  >
+    Recommending an instance block needs a Matrix or Mastodon platform role. The form
+    below is disabled until you have one — ask an administrator if you need it.
+  </p>
+
+  <!-- Visible action-feedback line (polite live region; .sr only while empty). -->
+  <p
+    class="hug-status"
+    [class.hug-error]="statusIsError()"
+    [class.sr]="!statusMessage()"
+    data-testid="recommend-status"
+    role="status"
+    aria-live="polite"
+  >{{ statusMessage() }}</p>
+
+  <form (ngSubmit)="submit()" novalidate aria-labelledby="recommend-heading">
+    <label for="recommend-instance">Instance (homeserver / domain)</label>
+    <!-- aria-disabled (NOT native `disabled`) keeps the field focusable while
+         gated so a screen reader tabbing the form reaches it and hears the gate
+         helptext; submit() guards the actual write. -->
+    <input
+      id="recommend-instance"
+      data-testid="recommend-instance"
+      name="instance"
+      [(ngModel)]="instance"
+      placeholder="bad.example.org"
+      [attr.aria-disabled]="!hasPlatformRole() ? 'true' : null"
+      [attr.aria-invalid]="formError() ? 'true' : null"
+      [attr.aria-describedby]="
+        'recommend-instance-help' +
+        (!hasPlatformRole() ? ' recommend-gate-help' : '') +
+        (formError() ? ' recommend-error' : '')
+      "
+    />
+    <span id="recommend-instance-help" class="field-help" data-testid="recommend-instance-help">
+      The domain of the instance to flag, e.g. bad.example.org — not an individual
+      account. Required.
+    </span>
+
+    <label for="recommend-reason">Reason (optional)</label>
+    <textarea
+      id="recommend-reason"
+      data-testid="recommend-reason"
+      name="reason"
+      rows="4"
+      [(ngModel)]="reason"
+      placeholder="Why should this instance be blocked?"
+      [attr.aria-disabled]="!hasPlatformRole() ? 'true' : null"
+      aria-describedby="recommend-reason-help"
+    ></textarea>
+    <span id="recommend-reason-help" class="field-help" data-testid="recommend-reason-help">
+      Context that helps a moderator decide. Optional, but a clear reason speeds review.
+    </span>
+
+    <!-- Role gate uses aria-disabled (focusable + announced) so the gate helptext
+         is reachable; the transient in-flight guard uses native `disabled`
+         (submitting()) because it has no helptext to miss. submit() early-returns
+         when the platform role is absent. -->
+    <button
+      data-testid="recommend-submit"
+      type="submit"
+      [disabled]="submitting()"
+      [attr.aria-disabled]="!hasPlatformRole() ? 'true' : null"
+      [attr.aria-describedby]="
+        'recommend-submit-help' + (!hasPlatformRole() ? ' recommend-gate-help' : '')
+      "
+    >Submit recommendation</button>
+    <span id="recommend-submit-help" class="field-help" data-testid="recommend-submit-help">
+      Sends your recommendation to the moderation queue. It does not block anything by
+      itself — a moderator reviews it.
+    </span>
+    <span
+      *ngIf="!hasPlatformRole()"
+      id="recommend-gate-help"
+      class="field-help"
+      data-testid="recommend-gate-help"
+    >Recommending an instance block requires a Matrix or Mastodon platform role. Ask an administrator if you need one.</span>
+
+    <span
+      *ngIf="formError()"
+      id="recommend-error"
+      class="field-error"
+      data-testid="recommend-error"
+      role="alert"
+      aria-live="assertive"
+    >{{ formError() }}</span>
+  </form>
+</section>

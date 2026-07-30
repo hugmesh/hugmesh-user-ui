@@ -1,0 +1,134 @@
+<section
+  class="hug-user-self-silence"
+  data-testid="self-silence-view"
+  aria-labelledby="self-silence-heading"
+>
+  <h2 id="self-silence-heading">Hide myself temporarily</h2>
+
+  <!-- Visible action-feedback line (polite live region; .sr only while empty). -->
+  <p
+    class="hug-status"
+    [class.hug-error]="statusIsError()"
+    [class.sr]="!statusMessage()"
+    data-testid="self-silence-status"
+    role="status"
+    aria-live="polite"
+  >{{ statusMessage() }}</p>
+
+  <p class="intro">
+    Self-silence hides you from others until a time you choose. It is
+    <strong>not a ban</strong> — you keep your account and full access the whole
+    time, and you become visible again automatically.
+  </p>
+
+  <!-- ACTIVE readback: when a silence is in effect, surface the scheduled wake. -->
+  <div
+    *ngIf="active()"
+    class="active-readback"
+    data-testid="self-silence-active"
+    role="status"
+    aria-live="polite"
+  >
+    <p data-testid="self-silence-wake">
+      You are hidden. This auto-reactivates
+      <strong>{{ wakeAt() | date: 'medium' }}</strong> — or email a moderator to
+      restore you sooner.
+    </p>
+    <div class="actions">
+      <button
+        type="button"
+        data-testid="self-silence-cancel"
+        (click)="cancel()"
+        [disabled]="busy()"
+        aria-describedby="self-silence-cancel-help"
+      >Un-hide me now</button>
+      <button
+        type="button"
+        data-testid="self-silence-email-mod"
+        (click)="emailMod()"
+        [disabled]="busy()"
+        aria-describedby="self-silence-email-mod-help"
+      >Email a moderator to restore me sooner</button>
+    </div>
+    <p id="self-silence-cancel-help" class="field-help" data-testid="self-silence-cancel-help">
+      Ends your hide immediately and makes you visible again right away.
+    </p>
+    <p id="self-silence-email-mod-help" class="field-help" data-testid="self-silence-email-mod-help">
+      Asks a moderator to lift your hide before its scheduled end. Your hide still
+      auto-clears at the time above if no one acts.
+    </p>
+  </div>
+
+  <!-- ACTIVATE form: choose an end time and hide. Disabled while already hidden. -->
+  <form (ngSubmit)="activate()" novalidate>
+    <label for="self-silence-until">Hide me until</label>
+    <!-- aria-disabled (NOT native `disabled`) keeps the field focusable while a
+         silence is active so AT users tabbing the form reach it and hear the
+         'already hidden' helptext; activate() guards the actual write. -->
+    <input
+      id="self-silence-until"
+      data-testid="self-silence-until"
+      name="until"
+      type="datetime-local"
+      [(ngModel)]="until"
+      [attr.aria-disabled]="active() ? 'true' : null"
+      [attr.aria-invalid]="formError() ? 'true' : null"
+      [attr.aria-describedby]="
+        'self-silence-until-help ' +
+        (active() ? 'self-silence-already ' : '') +
+        (formError() ? 'self-silence-error' : '')
+      "
+    />
+    <span id="self-silence-until-help" class="field-help" data-testid="self-silence-until-help">
+      Pick a future date and time. You auto-reactivate then — pick a few hours or days
+      ahead. Required.
+    </span>
+
+    <label for="self-silence-reason">Reason (optional)</label>
+    <input
+      id="self-silence-reason"
+      data-testid="self-silence-reason"
+      name="reason"
+      [(ngModel)]="reason"
+      [attr.aria-disabled]="active() ? 'true' : null"
+      [attr.aria-describedby]="
+        'self-silence-reason-help' + (active() ? ' self-silence-already' : '')
+      "
+      maxlength="2048"
+      placeholder="Only you and moderators see this"
+    />
+    <span id="self-silence-reason-help" class="field-help" data-testid="self-silence-reason-help">
+      Optional, private — only you and moderators can read it. Helpful if you later ask a
+      moderator to restore you sooner.
+    </span>
+
+    <!-- Persistent-gate (active) uses aria-disabled so the button stays focusable
+         and its 'already hidden' helptext is announced; activate() early-returns
+         when active(). busy() is a transient in-flight guard against double-submit
+         only, so native `disabled` there is fine (no helptext to miss). -->
+    <button
+      data-testid="self-silence-activate"
+      type="submit"
+      [disabled]="busy()"
+      [attr.aria-disabled]="active() ? 'true' : null"
+      [attr.aria-describedby]="active() ? 'self-silence-already' : null"
+    >Hide me</button>
+
+    <!-- Disabled-while-active helptext (the cross-cutting disable+explain rule). -->
+    <span
+      *ngIf="active()"
+      id="self-silence-already"
+      class="field-help"
+      data-testid="self-silence-already"
+    >You are already hidden until {{ wakeAt() | date: 'medium' }}. Un-hide first to change it.</span>
+
+    <span
+      *ngIf="formError()"
+      id="self-silence-error"
+      class="field-error"
+      data-testid="self-silence-error"
+      role="alert"
+      aria-live="assertive"
+    >{{ formError() }}</span>
+  </form>
+</section>

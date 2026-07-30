@@ -1,0 +1,72 @@
+@use '../styles/tokens' as t;
+
+:host {
+  display: block;
+}
+
+.hug-user-notification-preferences {
+  display: block;
+  padding: 1rem;
+
+  fieldset {
+    border: none;
+    padding: 0;
+    margin: 1rem 0 0;
+    max-width: 36rem;
+  }
+
+  legend {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .pref-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.15rem 0.75rem;
+    align-items: start;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--hug-border);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .pref-label {
+    grid-column: 1;
+    grid-row: 1;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .pref-help {
+    grid-column: 1;
+    grid-row: 2;
+    color: var(--hug-text-muted);
+    font-size: 0.85rem;
+  }
+
+  input[type='checkbox'] {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+    accent-color: var(--hug-accent);
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+  }
+
+  .forced-badge {
+    font-size: 0.75rem;
+    color: var(--hug-text-muted);
+    font-weight: 400;
+    margin-left: 0.25rem;
+  }
+}

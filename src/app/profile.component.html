@@ -1,0 +1,231 @@
+<section class="hug-user-profile" data-testid="profile-view" aria-labelledby="profile-heading">
+  <h2 id="profile-heading">My profile</h2>
+
+  <!-- Visible action-feedback line (polite live region; .sr only while empty). -->
+  <p
+    class="hug-status"
+    [class.hug-error]="statusIsError()"
+    [class.sr]="!statusMessage()"
+    data-testid="profile-status"
+    role="status"
+    aria-live="polite"
+  >{{ statusMessage() }}</p>
+
+  <p class="intro" data-testid="profile-intro">
+    Edit your own profile. Changes apply when you select <strong>Save profile</strong>.
+    Password and email changes are relayed securely to the identity provider.
+  </p>
+
+  <!-- Profile picture upload/preview. Self-contained: uploads immediately on
+       selection via POST /bff/user/profile/avatar and keeps the shared profile
+       in sync, so it sits above the field form rather than inside it. -->
+  <hug-profile-avatar></hug-profile-avatar>
+
+  <form (ngSubmit)="save()" novalidate aria-labelledby="profile-heading">
+    <label for="profile-displayName">Display name</label>
+    <input
+      id="profile-displayName"
+      data-testid="profile-displayName"
+      name="displayName"
+      [ngModel]="model().displayName"
+      (ngModelChange)="setDisplayName($event)"
+      autocomplete="nickname"
+      [attr.aria-invalid]="formError() ? 'true' : null"
+      [attr.aria-describedby]="'profile-displayName-help' + (formError() ? ' profile-error' : '')"
+    />
+    <span id="profile-displayName-help" class="field-help" data-testid="profile-displayName-help">
+      The name shown to others across the platform. Required.
+    </span>
+
+    <label for="profile-screenReaderName">Screen-reader name</label>
+    <input
+      id="profile-screenReaderName"
+      data-testid="profile-screenReaderName"
+      name="screenReaderName"
+      [ngModel]="model().screenReaderName"
+      (ngModelChange)="set('screenReaderName', $event)"
+      autocomplete="off"
+      [attr.aria-invalid]="needsScreenReaderName() ? 'true' : null"
+      aria-describedby="profile-srn-help profile-srn-prompt profile-srn-preview"
+    />
+    <span id="profile-srn-help" class="field-help" data-testid="profile-srn-help">
+      The ASCII name a screen reader announces. Leave blank to use your display name when it is plain ASCII.
+    </span>
+
+    <!-- Inline PROMPT: shown only when the display name is non-ASCII and no usable
+         ASCII screen-reader name has been entered (mirrors the server 422). -->
+    <span
+      *ngIf="needsScreenReaderName()"
+      id="profile-srn-prompt"
+      class="field-error"
+      data-testid="profile-srn-prompt"
+      role="alert"
+      aria-live="assertive"
+    >Your display name contains characters a screen reader cannot announce cleanly; enter an ASCII version above.</span>
+
+    <!-- Live preview of exactly what assistive tech will announce. -->
+    <p
+      id="profile-srn-preview"
+      class="srn-preview"
+      data-testid="profile-srn-preview"
+      role="status"
+      aria-live="polite"
+    >A screen reader will announce: <strong [attr.aria-label]="previewName()">{{ previewName() }}</strong></p>
+
+    <label for="profile-pronouns">Pronouns</label>
+    <input
+      id="profile-pronouns"
+      data-testid="profile-pronouns"
+      name="pronouns"
+      [ngModel]="model().pronouns"
+      (ngModelChange)="set('pronouns', $event)"
+      placeholder="they/them"
+      aria-describedby="profile-pronouns-help"
+    />
+    <span id="profile-pronouns-help" class="field-help" data-testid="profile-pronouns-help">
+      How others should refer to you, e.g. they/them. Optional, shown on your profile.
+    </span>
+
+    <label for="profile-gender">Gender</label>
+    <input
+      id="profile-gender"
+      data-testid="profile-gender"
+      name="gender"
+      [ngModel]="model().gender"
+      (ngModelChange)="set('gender', $event)"
+      aria-describedby="profile-gender-help"
+    />
+    <span id="profile-gender-help" class="field-help" data-testid="profile-gender-help">
+      Optional, free-text. Leave blank if you prefer not to say.
+    </span>
+
+    <label for="profile-timezone">Timezone</label>
+    <input
+      id="profile-timezone"
+      data-testid="profile-timezone"
+      name="timezone"
+      [ngModel]="model().timezone"
+      (ngModelChange)="set('timezone', $event)"
+      placeholder="UTC"
+      aria-describedby="profile-timezone-help"
+    />
+    <span id="profile-timezone-help" class="field-help" data-testid="profile-timezone-help">
+      An IANA timezone such as UTC or Europe/London. Used to show times in your local clock.
+    </span>
+
+    <label for="profile-visibility">Visibility</label>
+    <select
+      id="profile-visibility"
+      data-testid="profile-visibility"
+      name="visibility"
+      [ngModel]="model().visibility"
+      (ngModelChange)="set('visibility', $event)"
+      aria-describedby="profile-visibility-help"
+    >
+      <option value="internal">Internal (platform only)</option>
+      <option value="public">Public</option>
+    </select>
+    <span id="profile-visibility-help" class="field-help" data-testid="profile-visibility-help">
+      <strong>Internal</strong> shows your profile only to others on this platform;
+      <strong>Public</strong> also makes it visible across the wider federated network.
+    </span>
+
+    <div class="toggle">
+      <input
+        id="profile-vanity"
+        data-testid="profile-vanity"
+        type="checkbox"
+        name="vanitySubdomainEnabled"
+        [ngModel]="model().vanitySubdomainEnabled"
+        (ngModelChange)="set('vanitySubdomainEnabled', $event)"
+        aria-describedby="profile-vanity-help"
+      />
+      <label for="profile-vanity">Enable my vanity subdomain</label>
+    </div>
+    <span id="profile-vanity-help" class="field-help" data-testid="profile-vanity-help">
+      Serve your public profile at your own subdomain (your-name.hugmesh.systems).
+      Takes effect only when your visibility is Public.
+    </span>
+
+    <button
+      data-testid="profile-save"
+      type="submit"
+      [disabled]="saving()"
+      aria-describedby="profile-save-help"
+    >Save profile</button>
+    <span id="profile-save-help" class="field-help" data-testid="profile-save-help">
+      Saves every field above. Validation runs first; problems appear below this button.
+    </span>
+
+    <span
+      *ngIf="formError()"
+      id="profile-error"
+      class="field-error"
+      data-testid="profile-error"
+      role="alert"
+      aria-live="assertive"
+    >{{ formError() }}</span>
+  </form>
+
+  <h3 id="profile-password-heading">Change password</h3>
+  <form (ngSubmit)="changePassword()" novalidate aria-labelledby="profile-password-heading">
+    <p class="field-help" id="profile-password-help" data-testid="profile-password-help">
+      Enter your current password to confirm it is you, then your new password.
+      Both are required.
+    </p>
+    <label for="profile-oldPassword">Current password</label>
+    <input
+      id="profile-oldPassword"
+      data-testid="profile-oldPassword"
+      type="password"
+      name="oldPassword"
+      [(ngModel)]="oldPassword"
+      autocomplete="current-password"
+      aria-describedby="profile-password-help"
+    />
+    <label for="profile-newPassword">New password</label>
+    <input
+      id="profile-newPassword"
+      data-testid="profile-newPassword"
+      type="password"
+      name="newPassword"
+      [(ngModel)]="newPassword"
+      autocomplete="new-password"
+      aria-describedby="profile-password-help"
+    />
+    <button data-testid="profile-change-password" type="submit">Change password</button>
+    <span
+      *ngIf="passwordMessage()"
+      class="field-message"
+      data-testid="profile-password-message"
+      role="status"
+      aria-live="polite"
+    >{{ passwordMessage() }}</span>
+  </form>
+
+  <h3 id="profile-email-heading">Change email</h3>
+  <form (ngSubmit)="changeEmail()" novalidate aria-labelledby="profile-email-heading">
+    <label for="profile-newEmail">New email address</label>
+    <input
+      id="profile-newEmail"
+      data-testid="profile-newEmail"
+      type="email"
+      name="newEmail"
+      [(ngModel)]="newEmail"
+      autocomplete="email"
+      aria-describedby="profile-email-help"
+    />
+    <span id="profile-email-help" class="field-help" data-testid="profile-email-help">
+      The address you sign in with and receive account notices at. You may need to
+      confirm it before the change takes effect.
+    </span>
+    <button data-testid="profile-change-email" type="submit">Change email</button>
+    <span
+      *ngIf="emailMessage()"
+      class="field-message"
+      data-testid="profile-email-message"
+      role="status"
+      aria-live="polite"
+    >{{ emailMessage() }}</span>
+  </form>
+</section>

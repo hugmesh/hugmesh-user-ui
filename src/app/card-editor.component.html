@@ -1,0 +1,181 @@
+<div class="hug-card-editor" data-testid="card-editor">
+  <div class="editor-pane">
+    <!-- Provided-tag palette: the sanctioned Angular tags the author may use. -->
+    <section class="tag-palette" aria-labelledby="tag-palette-heading">
+      <h4 id="tag-palette-heading">Provided tags</h4>
+      <p class="hint" id="tag-palette-help">
+        Insert a sanctioned tag into the focused section. Only these tags (plus
+        basic Markdown/HTML) render — scripts and unknown tags are stripped.
+      </p>
+      <div class="palette-grid" role="group" aria-labelledby="tag-palette-heading">
+        <button
+          *ngFor="let tag of providedTags"
+          type="button"
+          class="palette-btn"
+          [attr.data-testid]="'palette-' + tag.tag"
+          [attr.aria-label]="'Insert ' + tag.tag + ': ' + tag.summary"
+          [title]="tag.summary"
+          (click)="insertTag(tag)"
+        >
+          <code aria-hidden="true">&lt;{{ tag.tag }}&gt;</code>
+        </button>
+      </div>
+    </section>
+
+    <!-- Ordered, draggable sections. -->
+    <section class="sections" aria-labelledby="sections-heading">
+      <div class="sections-head">
+        <h4 id="sections-heading">Card sections</h4>
+        <button
+          type="button"
+          class="add-section"
+          data-testid="add-section"
+          (click)="addSection()"
+        >+ Add section</button>
+      </div>
+      <p class="hint" id="sections-help">
+        Drag the handle to reorder, or use Move up / Move down. Each section can
+        be aligned and split into columns.
+      </p>
+
+      <ol
+        #bodyAreas
+        class="section-list"
+        data-testid="section-list"
+        cdkDropList
+        aria-describedby="sections-help"
+        (cdkDropListDropped)="drop($event)"
+      >
+        <li
+          *ngFor="let section of sections(); let i = index; trackBy: trackSection"
+          class="section-card"
+          [attr.data-section-index]="i"
+          cdkDrag
+          [attr.aria-label]="'Section ' + (i + 1) + (section.title ? ': ' + section.title : '')"
+        >
+          <div class="section-toolbar">
+            <button
+              type="button"
+              class="drag-handle"
+              cdkDragHandle
+              [attr.data-testid]="'drag-' + i"
+              [attr.aria-label]="'Reorder section ' + (i + 1) + ' (drag, or use Move up and Move down)'"
+            ><span aria-hidden="true">&#9776;</span></button>
+
+            <button
+              type="button"
+              class="move-up"
+              [attr.data-testid]="'move-up-' + i"
+              [attr.aria-label]="'Move section ' + (i + 1) + ' up'"
+              [disabled]="i === 0"
+              (click)="move(i, -1)"
+            ><span aria-hidden="true">&#9650;</span></button>
+
+            <button
+              type="button"
+              class="move-down"
+              [attr.data-testid]="'move-down-' + i"
+              [attr.aria-label]="'Move section ' + (i + 1) + ' down'"
+              [disabled]="i === sections().length - 1"
+              (click)="move(i, 1)"
+            ><span aria-hidden="true">&#9660;</span></button>
+
+            <span class="section-index" aria-hidden="true">#{{ i + 1 }}</span>
+
+            <button
+              type="button"
+              class="remove-section"
+              [attr.data-testid]="'remove-' + i"
+              [attr.aria-label]="'Remove section ' + (i + 1)"
+              (click)="removeSection(i)"
+            ><span aria-hidden="true">&times;</span></button>
+          </div>
+
+          <label [attr.for]="'sec-title-' + i">Section title (optional)</label>
+          <input
+            [id]="'sec-title-' + i"
+            class="section-title"
+            [attr.data-testid]="'section-title-' + i"
+            [ngModel]="section.title"
+            [name]="'sec-title-' + i"
+            (ngModelChange)="onTitleInput(i, $event)"
+            (focus)="focusSection(i)"
+            placeholder="About me"
+          />
+
+          <label [attr.for]="'sec-body-' + i">Section content (HTML, provided tags, $$math$$)</label>
+          <textarea
+            [id]="'sec-body-' + i"
+            class="section-body"
+            [attr.data-testid]="'section-body-' + i"
+            rows="5"
+            [ngModel]="section.content"
+            [name]="'sec-body-' + i"
+            (ngModelChange)="onContentInput(i, $event)"
+            (focus)="focusSection(i)"
+            placeholder="<sd-callout tone=&quot;info&quot;>Hello</sd-callout>"
+          ></textarea>
+
+          <div class="orientation" role="group" [attr.aria-label]="'Orientation for section ' + (i + 1)">
+            <span class="orientation-label">Align</span>
+            <button
+              *ngFor="let a of alignments"
+              type="button"
+              class="align-btn"
+              [attr.data-testid]="'align-' + a + '-' + i"
+              [attr.aria-label]="'Align ' + a"
+              [attr.aria-pressed]="section.layout.align === a"
+              (click)="onAlign(i, a)"
+            >{{ a }}</button>
+
+            <label class="cols-label" [attr.for]="'sec-cols-' + i">Columns</label>
+            <select
+              [id]="'sec-cols-' + i"
+              class="cols-select"
+              [attr.data-testid]="'columns-' + i"
+              [ngModel]="section.layout.columns"
+              [name]="'sec-cols-' + i"
+              (ngModelChange)="onColumns(i, +$event)"
+            >
+              <option *ngFor="let c of columnChoices" [ngValue]="c">{{ c }}</option>
+            </select>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <label for="card-css-body">Card style block (CSS, scoped to your card)</label>
+    <textarea
+      id="card-css-body"
+      data-testid="card-css-body"
+      name="userCss"
+      rows="4"
+      [ngModel]="userCss()"
+      (ngModelChange)="onCssInput($event)"
+      placeholder=".card-root h1 { color: rebeccapurple; }"
+      aria-describedby="card-css-help"
+    ></textarea>
+    <p id="card-css-help" class="hint">
+      Your CSS is scoped to <code>.card-root</code> — it can only style this card,
+      never the page around it.
+    </p>
+  </div>
+
+  <div class="preview-pane">
+    <h4 id="card-preview-heading">Live preview</h4>
+    <!--
+      SANDBOXED PREVIEW. No allow-scripts, no allow-same-origin: the frame is a
+      null-origin, script-disabled document. Only the sanitised, CSS-scoped card
+      document (with PRE-RENDERED KaTeX, no runtime math script) loads via srcdoc.
+    -->
+    <iframe
+      data-testid="card-preview"
+      class="preview-frame"
+      title="Sandboxed card preview"
+      aria-labelledby="card-preview-heading"
+      sandbox=""
+      referrerpolicy="no-referrer"
+      [srcdoc]="previewDoc()"
+    ></iframe>
+  </div>
+</div>

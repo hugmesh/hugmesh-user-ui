@@ -1,0 +1,58 @@
+<section class="hug-user-home" data-testid="home-view" aria-labelledby="home-heading">
+  <h2 id="home-heading">Welcome to hugmesh.systems</h2>
+
+  <!-- Visible action-feedback line: keeps role=status + aria-live so it is a
+       polite live region for screen readers, and shows the message to sighted
+       users too. `.sr` (visually-hidden, still in the a11y tree) is applied ONLY
+       while the message is empty so no empty box renders. -->
+  <p
+    class="hug-status"
+    [class.sr]="!statusMessage()"
+    data-testid="home-status"
+    role="status"
+    aria-live="polite"
+  >{{ statusMessage() }}</p>
+
+  <!-- Shown on first visit (and until dismissed). -->
+  <div
+    *ngIf="dismissed() === false"
+    class="guide"
+    data-testid="home-guide"
+    role="region"
+    aria-labelledby="home-guide-heading"
+  >
+    <h3 id="home-guide-heading">Getting started</h3>
+    <p>Here's how to make the most of your account:</p>
+    <ul>
+      <li><strong>Set up your profile</strong> — choose a display name, a screen-reader name, pronouns, timezone and visibility.</li>
+      <li><strong>Publish federation cards</strong> — share your own federation bundles with the network.</li>
+      <li><strong>Manage self-blocks</strong> — mute or block accounts across Matrix, Mastodon, or internally.</li>
+      <li><strong>Recommend an instance block</strong> — flag a problem instance for moderator review.</li>
+      <li><strong>Hide yourself temporarily</strong> — self-silence to become invisible to others until a time you choose (you auto-reactivate, and it is not a ban).</li>
+      <li><strong>Manage connected apps</strong> — review and revoke external apps and device sessions (needs an external-client role).</li>
+    </ul>
+
+    <button
+      type="button"
+      data-testid="home-dismiss"
+      class="dismiss"
+      (click)="dismiss()"
+      aria-describedby="home-dismiss-help"
+    >Dismiss — don't show this again</button>
+    <span id="home-dismiss-help" class="field-help" data-testid="home-dismiss-help">
+      Hides this guide for good across all your devices. You can bring it back later from
+      this page.
+    </span>
+  </div>
+
+  <!-- After dismissal: a quiet control to bring the guide back. -->
+  <p *ngIf="dismissed() === true" data-testid="home-dismissed-note">
+    You've dismissed the getting-started guide.
+    <button
+      type="button"
+      data-testid="home-show-again"
+      class="link-button"
+      (click)="showAgain()"
+    >Show it again</button>
+  </p>
+</section>

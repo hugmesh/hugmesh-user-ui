@@ -1,0 +1,61 @@
+<section
+  class="hug-user-notification-preferences"
+  data-testid="notification-preferences-view"
+  aria-labelledby="notif-prefs-heading"
+>
+  <h2 id="notif-prefs-heading">Notification preferences</h2>
+
+  <div
+    *ngIf="loadError()"
+    role="alert"
+    class="hug-error"
+    data-testid="notif-prefs-load-error"
+  >{{ loadError() }}</div>
+
+  <p
+    *ngIf="statusMessage()"
+    role="status"
+    aria-live="polite"
+    class="hug-status"
+    [class.hug-error]="statusIsError()"
+    data-testid="notif-prefs-status"
+  >{{ statusMessage() }}</p>
+
+  <fieldset
+    data-testid="notif-prefs-fieldset"
+    [attr.disabled]="loadError() ? '' : null"
+  >
+    <legend>Notification categories</legend>
+
+    <div
+      *ngFor="let cat of categories"
+      class="pref-row"
+      [attr.data-category]="cat"
+    >
+      <label [attr.for]="'notif-pref-' + cat" class="pref-label">
+        {{ categoryLabels[cat] }}
+        <span
+          *ngIf="cat === 'account-restriction'"
+          class="forced-badge"
+        >(always on)</span>
+      </label>
+
+      <span [id]="'notif-pref-help-' + cat" class="hug-help pref-help">
+        {{ categoryHelp[cat] }}
+      </span>
+
+      <!-- Natively disabled for account-restriction; aria-disabled NOT used here
+           because native disabled is correct — the field is genuinely not
+           interactive and a screen reader should announce it as unavailable. -->
+      <input
+        type="checkbox"
+        [id]="'notif-pref-' + cat"
+        [attr.aria-describedby]="'notif-pref-help-' + cat"
+        [checked]="isEnabled(cat)"
+        [attr.disabled]="isDisabled(cat) ? '' : null"
+        (change)="onToggle(cat, $event)"
+        [attr.data-testid]="'notif-pref-toggle-' + cat"
+      />
+    </div>
+  </fieldset>
+</section>

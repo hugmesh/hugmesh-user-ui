@@ -1,0 +1,96 @@
+<section
+  class="hug-user-notifications"
+  data-testid="notifications-view"
+  aria-labelledby="notifications-heading"
+>
+  <h2 id="notifications-heading">
+    Notifications
+    <span
+      *ngIf="unreadCount > 0"
+      class="unread-badge"
+      [attr.aria-label]="unreadCount + ' unread'"
+      data-testid="unread-badge"
+      aria-live="polite"
+    >{{ unreadCount }}</span>
+  </h2>
+
+  <!-- Polite live region for mark-as-read status. Visible while populated so a
+       sighted user sees the confirmation too; .sr (still in the a11y tree) is
+       applied only while the message is empty so no empty box renders. -->
+  <p
+    class="hug-status"
+    [class.hug-error]="statusIsError()"
+    [class.sr]="!statusMessage()"
+    role="status"
+    aria-live="polite"
+    data-testid="notifications-status"
+  >{{ statusMessage() }}</p>
+
+  <!-- Honest disclosure: real-time push is currently unreachable. The list above
+       may be stale until the SSE stream reconnects — say so rather than silently
+       looking current. -->
+  <p
+    *ngIf="liveStatus() === 'degraded'"
+    role="status"
+    aria-live="polite"
+    class="live-status-banner"
+    data-testid="notifications-live-degraded"
+  >Live updates are temporarily unavailable — this list may not include the most recent notifications. Reconnecting…</p>
+
+  <div
+    *ngIf="loadError()"
+    role="alert"
+    class="hug-error"
+    data-testid="notifications-load-error"
+  >{{ loadError() }}</div>
+
+  <p
+    *ngIf="loading()"
+    data-testid="notifications-loading"
+    aria-live="polite"
+    aria-busy="true"
+  >Loading…</p>
+
+  <p
+    *ngIf="!loading() && !loadError() && notifications().length === 0"
+    data-testid="notifications-empty"
+  >You have no notifications.</p>
+
+  <ul
+    *ngIf="notifications().length > 0"
+    class="notifications-list"
+    aria-label="Notification inbox"
+    data-testid="notifications-list"
+  >
+    <li
+      *ngFor="let n of notifications()"
+      class="notification-item"
+      [class.unread]="isUnread(n)"
+      [attr.data-notification-id]="n.id"
+    >
+      <div class="notification-body">
+        <span class="notification-title">{{ n.title }}</span>
+        <span class="notification-text">{{ n.body }}</span>
+        <span class="notification-meta">
+          <time [attr.datetime]="n.createdAt">{{ n.createdAt | date: 'medium' }}</time>
+          <!-- Unread dot: visual signal only — the aria-label on the badge in the
+               heading carries the accessible announcement. -->
+          <span
+            *ngIf="isUnread(n)"
+            class="unread-dot"
+            aria-hidden="true"
+          ></span>
+        </span>
+      </div>
+
+      <button
+        *ngIf="isUnread(n)"
+        type="button"
+        class="mark-read-btn"
+        [attr.data-mark-read]="n.id"
+        [attr.aria-label]="'Mark as read: ' + n.title"
+        (click)="markRead(n)"
+      >Mark as read</button>
+    </li>
+  </ul>
+</section>

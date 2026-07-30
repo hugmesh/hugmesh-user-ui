@@ -1,0 +1,39 @@
+<section aria-labelledby="prefs-heading">
+  <h2 id="prefs-heading">Preferences</h2>
+
+  <div *ngIf="loadError()" role="alert" class="hug-error" data-testid="prefs-load-error">
+    {{ loadError() }}
+  </div>
+
+  <fieldset data-testid="prefs-media-poison-fieldset">
+    <legend>AI media cloak</legend>
+
+    <p id="prefs-poison-help" class="hug-help">
+      The default noise level applied to your media before it is shared. A compose
+      surface lets you override this per-post; this preference sets the starting value.
+    </p>
+
+    <label for="prefs-poison-select">Default AI-cloak mode</label>
+    <select
+      id="prefs-poison-select"
+      aria-describedby="prefs-poison-help"
+      [attr.disabled]="busy() || loadError() || poisonMode() === null ? '' : null"
+      [value]="poisonMode() ?? 'off'"
+      (change)="onPoisonChange($event)"
+      data-testid="prefs-poison-select"
+    >
+      <option *ngFor="let m of poisonModes" [value]="m">{{ poisonLabels[m] }}</option>
+    </select>
+
+    <p
+      *ngIf="statusMessage()"
+      role="status"
+      aria-live="polite"
+      class="hug-status"
+      [class.hug-error]="statusIsError()"
+      data-testid="prefs-status"
+    >
+      {{ statusMessage() }}
+    </p>
+  </fieldset>
+</section>

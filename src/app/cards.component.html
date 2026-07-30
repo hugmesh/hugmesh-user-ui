@@ -1,0 +1,138 @@
+<section class="hug-user-cards" data-testid="cards-view" aria-labelledby="cards-heading">
+  <h2 id="cards-heading">My federation cards</h2>
+
+  <!-- Visible action-feedback line: publish confirmations AND load errors ("Could
+       not load your cards.") were previously .sr-only, so sighted users never saw
+       them. Now visible while populated; polite live region kept for AT. -->
+  <p
+    class="hug-status"
+    [class.hug-error]="statusIsError()"
+    [class.sr]="!statusMessage()"
+    data-testid="cards-status"
+    role="status"
+    aria-live="polite"
+  >{{ statusMessage() }}</p>
+
+  <p class="intro" data-testid="cards-intro">
+    Cards are small content panels you publish to the federated network. Give a card a
+    slug, design its content below, then select <strong>Publish card</strong>.
+  </p>
+
+  <form (ngSubmit)="publish()" novalidate aria-labelledby="cards-editor-heading">
+    <h3 id="cards-editor-heading">Publish a card</h3>
+
+    <label for="cards-slug">Slug</label>
+    <input
+      id="cards-slug"
+      data-testid="cards-slug"
+      name="slug"
+      [(ngModel)]="slug"
+      placeholder="my-card"
+      [attr.aria-invalid]="formError() ? 'true' : null"
+      [attr.aria-describedby]="'cards-slug-help' + (formError() ? ' cards-error' : '')"
+    />
+    <span id="cards-slug-help" class="field-help" data-testid="cards-slug-help">
+      A short URL-safe identifier (lowercase letters, digits, hyphens). Reusing an
+      existing slug publishes a new version of that card. Required.
+    </span>
+
+    <label for="cards-entryFile">Entry file name (optional)</label>
+    <input
+      id="cards-entryFile"
+      data-testid="cards-entryFile"
+      name="entryFile"
+      [(ngModel)]="entryFile"
+      placeholder="index.js"
+      aria-describedby="cards-entryFile-help"
+    />
+    <span id="cards-entryFile-help" class="field-help" data-testid="cards-entryFile-help">
+      Advanced: the bundle's entry file name. Leave blank to use the default.
+    </span>
+
+    <label for="cards-visibility">Visibility</label>
+    <select
+      id="cards-visibility"
+      data-testid="cards-visibility"
+      name="visibility"
+      [(ngModel)]="visibility"
+      aria-describedby="cards-visibility-help"
+    >
+      <option value="internal">Internal</option>
+      <option value="public">Public</option>
+    </select>
+    <span id="cards-visibility-help" class="field-help" data-testid="cards-visibility-help">
+      <strong>Internal</strong> keeps the card on this platform; <strong>Public</strong>
+      shares it across the wider federated network.
+    </span>
+
+    <h4 id="cards-editor-body-heading">Card content</h4>
+    <!-- Sandboxed WYSIWYG editor: Markdown body + scoped CSS + safe live preview. -->
+    <hug-user-card-editor
+      data-testid="cards-editor"
+      aria-labelledby="cards-editor-body-heading"
+    ></hug-user-card-editor>
+
+    <button
+      data-testid="cards-publish"
+      type="submit"
+      [disabled]="saving() || owncastGrantState() === 'denied'"
+      [attr.aria-describedby]="owncastGrantState() === 'denied' ? 'cards-publish-help cards-owncast-no-grant' : 'cards-publish-help'"
+    >Publish card</button>
+    <span id="cards-publish-help" class="field-help" data-testid="cards-publish-help">
+      Publishes the card with the content designed above. Requires a slug and at least
+      one section with content.
+    </span>
+    <span
+      *ngIf="owncastGrantState() === 'denied'"
+      id="cards-owncast-no-grant"
+      class="field-help field-help--warn"
+      data-testid="cards-owncast-no-grant"
+      role="note"
+    >You need a broadcast grant from an admin to publish a live stream card.</span>
+
+    <span
+      *ngIf="formError()"
+      id="cards-error"
+      class="field-error"
+      data-testid="cards-error"
+      role="alert"
+      aria-live="assertive"
+    >{{ formError() }}</span>
+  </form>
+
+  <h3 id="cards-list-heading">My cards</h3>
+  <table data-testid="cards-rows" aria-labelledby="cards-list-heading">
+    <caption class="sr">My federation bundle cards: slug, visibility, version, created</caption>
+    <thead>
+      <tr>
+        <th scope="col">Slug</th>
+        <th scope="col">Visibility</th>
+        <th scope="col">Version</th>
+        <th scope="col">Created</th>
+        <th scope="col"><span class="sr">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let c of cards()" [attr.data-card-slug]="c.slug">
+        <td>{{ c.slug }}</td>
+        <td>{{ c.visibility }}</td>
+        <td>{{ c.versionDir }}</td>
+        <td>{{ c.createdAt }}</td>
+        <td>
+          <button
+            type="button"
+            [attr.data-edit]="c.slug"
+            [attr.aria-label]="'Edit card ' + c.slug"
+            (click)="edit(c)"
+          >edit</button>
+          <button
+            type="button"
+            [attr.data-delete]="c.slug"
+            [attr.aria-label]="'Delete card ' + c.slug"
+            (click)="remove(c)"
+          >delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>

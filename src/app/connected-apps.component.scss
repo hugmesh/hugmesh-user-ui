@@ -1,0 +1,37 @@
+@use '../styles/tokens' as t;
+
+:host {
+  display: block;
+}
+
+.hug-user-connected-apps {
+  display: block;
+  padding: 1rem;
+
+  .intro {
+    max-width: 36rem;
+    color: var(--hug-text-muted);
+  }
+
+  button {
+    background: var(--hug-accent);
+    color: var(--hug-text);
+    border: 1px solid var(--hug-accent-soft);
+    border-radius: t.$radius-sm;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+
+    th,
+    td {
+      text-align: left;
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--hug-border);
+    }
+  }
+}

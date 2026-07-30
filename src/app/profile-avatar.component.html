@@ -1,0 +1,77 @@
+<section
+  class="hug-profile-avatar"
+  data-testid="profile-avatar"
+  aria-labelledby="profile-avatar-heading"
+>
+  <h3 id="profile-avatar-heading">Profile picture</h3>
+
+  <p class="intro" data-testid="profile-avatar-intro">
+    Upload a profile picture shown to others across the platform. Choose a JPEG or
+    PNG image up to 5&nbsp;MB.
+  </p>
+
+  <!-- Current avatar (server-stored) OR a placeholder when none is set yet.
+       A just-chosen file shows its local preview alongside until the upload
+       completes and replaces the stored avatar. -->
+  <div class="avatar-display">
+    <img
+      *ngIf="currentProfile()?.avatarUrl as url"
+      data-testid="profile-avatar-image"
+      [src]="url"
+      alt="Your current profile picture"
+    />
+    <span
+      *ngIf="!currentProfile()?.avatarUrl"
+      class="avatar-placeholder"
+      data-testid="profile-avatar-placeholder"
+      role="img"
+      aria-label="No profile picture set yet"
+    >No picture</span>
+
+    <img
+      *ngIf="previewUrl()"
+      class="avatar-preview"
+      data-testid="profile-avatar-preview"
+      [src]="previewUrl()"
+      alt="Preview of the picture you just chose"
+    />
+  </div>
+
+  <div class="avatar-upload" data-testid="profile-avatar-upload">
+    <label for="profile-avatar-file">Choose a new picture</label>
+    <input
+      id="profile-avatar-file"
+      data-testid="profile-avatar-file"
+      type="file"
+      accept="image/jpeg,image/png"
+      [disabled]="uploading()"
+      (change)="onFileSelected($event)"
+      [attr.aria-invalid]="uploadError() ? 'true' : null"
+      [attr.aria-describedby]="'profile-avatar-help' + (uploadError() ? ' profile-avatar-error' : '')"
+    />
+    <span
+      id="profile-avatar-help"
+      class="field-help"
+      data-testid="profile-avatar-help"
+    >Accepted formats: JPEG or PNG. Maximum size: 5&nbsp;MB. The picture uploads as soon as you choose it.</span>
+  </div>
+
+  <!-- Upload progress announced politely to screen readers. -->
+  <p
+    *ngIf="uploading()"
+    class="field-message"
+    data-testid="profile-avatar-uploading"
+    role="status"
+    aria-live="polite"
+  >Uploading your profile picture…</p>
+
+  <!-- Validation / upload failure surfaced assertively. -->
+  <span
+    *ngIf="uploadError()"
+    id="profile-avatar-error"
+    class="field-error"
+    data-testid="profile-avatar-error"
+    role="alert"
+    aria-live="assertive"
+  >{{ uploadError() }}</span>
+</section>

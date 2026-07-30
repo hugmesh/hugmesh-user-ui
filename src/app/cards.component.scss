@@ -1,0 +1,77 @@
+@use '../styles/tokens' as t;
+
+:host {
+  display: block;
+}
+
+.hug-user-cards {
+  display: block;
+  padding: 1rem;
+
+  // Section-level explanation. Body-contrast primary guidance; WCAG palette + rem.
+  .intro {
+    max-width: 40rem;
+    color: var(--hug-text);
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 40rem;
+    margin-block: 0.75rem 1.5rem;
+  }
+
+  label {
+    font-weight: 600;
+    color: var(--hug-text);
+  }
+
+  input,
+  select,
+  textarea {
+    background: var(--hug-bg-1);
+    color: var(--hug-text);
+    border: 1px solid var(--hug-border);
+    border-radius: t.$radius-sm;
+    padding: 0.5rem 0.75rem;
+    font: inherit;
+
+    &[aria-invalid='true'] {
+      border-color: var(--hug-error);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 8rem;
+  }
+
+  button {
+    align-self: flex-start;
+    background: var(--hug-accent);
+    color: var(--hug-text);
+    border: 1px solid var(--hug-accent-soft);
+    border-radius: t.$radius-sm;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+
+    &[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+
+    th,
+    td {
+      text-align: left;
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--hug-border);
+    }
+  }
+}

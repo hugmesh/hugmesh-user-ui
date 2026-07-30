@@ -1,0 +1,88 @@
+@use '../styles/tokens' as t;
+
+:host {
+  display: block;
+}
+
+.hug-user-profile {
+  display: block;
+  padding: 1rem;
+
+  // Section-level explanation of what this view does. Body-contrast (not muted)
+  // so it reads as primary guidance; honours the WCAG palette + scalable rem text.
+  .intro {
+    max-width: 40rem;
+    color: var(--hug-text);
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 32rem;
+    margin-block: 0.75rem 1.5rem;
+  }
+
+  label {
+    font-weight: 600;
+    color: var(--hug-text);
+  }
+
+  input,
+  select {
+    background: var(--hug-bg-1);
+    color: var(--hug-text);
+    border: 1px solid var(--hug-border);
+    border-radius: t.$radius-sm;
+    padding: 0.5rem 0.75rem;
+
+    &[aria-invalid='true'] {
+      border-color: var(--hug-error);
+    }
+  }
+
+  .toggle {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+
+    input[type='checkbox'] {
+      width: auto;
+    }
+
+    label {
+      font-weight: 400;
+    }
+  }
+
+  button {
+    align-self: flex-start;
+    background: var(--hug-accent);
+    color: var(--hug-text);
+    border: 1px solid var(--hug-accent-soft);
+    border-radius: t.$radius-sm;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+
+    &[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .field-message {
+    color: var(--hug-text-muted);
+    font-weight: 600;
+  }
+
+  // Live aria-label preview of what assistive tech will announce for this user.
+  .srn-preview {
+    margin: 0.25rem 0 0.5rem;
+    color: var(--hug-text-muted);
+
+    strong {
+      color: var(--hug-accent-soft);
+    }
+  }
+}

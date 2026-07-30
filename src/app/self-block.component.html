@@ -1,0 +1,92 @@
+<section class="hug-user-self-block" data-testid="self-block-view" aria-labelledby="self-block-heading">
+  <h2 id="self-block-heading">My self-blocks</h2>
+
+  <!-- Visible action-feedback line (polite live region; .sr only while empty). -->
+  <p
+    class="hug-status"
+    [class.hug-error]="statusIsError()"
+    [class.sr]="!statusMessage()"
+    data-testid="self-block-status"
+    role="status"
+    aria-live="polite"
+  >{{ statusMessage() }}</p>
+
+  <p class="intro" data-testid="self-block-intro">
+    Block accounts you do not want to see or hear from. A block applies only to your
+    own view — the other person is not notified, and only you can see this list.
+  </p>
+
+  <form (ngSubmit)="add()" novalidate>
+    <label for="self-block-target">Target to block</label>
+    <input
+      id="self-block-target"
+      data-testid="self-block-target"
+      name="target"
+      [(ngModel)]="target"
+      placeholder="@user:example.org"
+      [attr.aria-invalid]="formError() ? 'true' : null"
+      [attr.aria-describedby]="'self-block-target-help' + (formError() ? ' self-block-error' : '')"
+    />
+    <span id="self-block-target-help" class="field-help" data-testid="self-block-target-help">
+      The account to block — a federated handle like &#64;user:example.org, or an
+      internal username. Required.
+    </span>
+
+    <label for="self-block-platform">Platform</label>
+    <select
+      id="self-block-platform"
+      data-testid="self-block-platform"
+      name="platform"
+      [(ngModel)]="platform"
+      aria-describedby="self-block-platform-help"
+    >
+      <option *ngFor="let p of platforms" [value]="p">{{ p }}</option>
+    </select>
+    <span id="self-block-platform-help" class="field-help" data-testid="self-block-platform-help">
+      Where the block applies: Matrix, Mastodon, or internal platform messaging.
+    </span>
+
+    <button
+      data-testid="self-block-add"
+      type="submit"
+      aria-describedby="self-block-add-help"
+    >Add block</button>
+    <span id="self-block-add-help" class="field-help" data-testid="self-block-add-help">
+      Adds the account above to your block list on the chosen platform.
+    </span>
+
+    <span
+      *ngIf="formError()"
+      id="self-block-error"
+      class="field-error"
+      data-testid="self-block-error"
+      role="alert"
+      aria-live="assertive"
+    >{{ formError() }}</span>
+  </form>
+
+  <table data-testid="self-block-rows" aria-labelledby="self-block-heading">
+    <caption class="sr">My self-blocks: target, platform</caption>
+    <thead>
+      <tr>
+        <th scope="col">Target</th>
+        <th scope="col">Platform</th>
+        <th scope="col"><span class="sr">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let b of blocks()" [attr.data-block-id]="b.id">
+        <td>{{ b.target }}</td>
+        <td>{{ b.platform }}</td>
+        <td>
+          <button
+            type="button"
+            [attr.data-remove]="b.id"
+            [attr.aria-label]="'Remove block on ' + b.target"
+            (click)="remove(b)"
+          >remove</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>

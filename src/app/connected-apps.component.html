@@ -1,0 +1,90 @@
+<section
+  class="hug-user-connected-apps"
+  data-testid="connected-apps-view"
+  aria-labelledby="connected-apps-heading"
+>
+  <h2 id="connected-apps-heading">Connected apps &amp; devices</h2>
+
+  <!-- Visible action-feedback line: revoke confirmations AND the load error were
+       previously .sr-only. Now visible while populated; polite live region kept. -->
+  <p
+    class="hug-status"
+    [class.hug-error]="statusIsError()"
+    [class.sr]="!statusMessage()"
+    data-testid="connected-apps-status"
+    role="status"
+    aria-live="polite"
+  >{{ statusMessage() }}</p>
+
+  <!-- GATED: no external-client role -> show the surface DISABLED + explain why
+       (defence-in-depth mirror of the BFF ConnectedClientsController gate). -->
+  <ng-container *ngIf="!hasExternalClientRole(); else granted">
+    <p class="intro">
+      Connecting external apps (Element, Tusky, Ivory) and managing their device
+      sessions needs a Matrix or Mastodon external-client role.
+    </p>
+    <!-- aria-disabled (NOT native `disabled`) keeps the control focusable so a
+         screen reader tabbing the form lands on it and announces the
+         aria-describedby helptext explaining WHY it is gated. It has no (click)
+         handler, so it is already a no-op when ungated. -->
+    <button
+      type="button"
+      data-testid="connected-apps-disabled"
+      aria-disabled="true"
+      aria-describedby="connected-apps-gate-help"
+    >Manage connected apps</button>
+    <span
+      id="connected-apps-gate-help"
+      class="field-help"
+      data-testid="connected-apps-gate-help"
+    >Connecting external clients requires a Matrix or Mastodon external-client role. Ask an administrator if you need one.</span>
+  </ng-container>
+
+  <ng-template #granted>
+    <!-- data-testid so the e2e ALLOW half can assert the GRANTED branch rendered.
+         The gated button is simply ABSENT on this branch (the live management
+         surface replaces it), so the honest enabled-side oracle is
+         "granted intro present + gated control absent". -->
+    <p class="intro" data-testid="connected-apps-granted">
+      These are the external apps and device sessions connected to your account.
+      Revoke any you no longer recognise.
+    </p>
+
+    <p *ngIf="clients().length === 0" data-testid="connected-apps-empty">
+      You have no connected apps or devices.
+    </p>
+
+    <table
+      *ngIf="clients().length > 0"
+      data-testid="connected-apps-rows"
+      aria-labelledby="connected-apps-heading"
+    >
+      <caption class="sr">My connected apps and devices: name, platform, kind, connected since</caption>
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Platform</th>
+          <th scope="col">Kind</th>
+          <th scope="col">Connected</th>
+          <th scope="col"><span class="sr">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of clients()" [attr.data-client-id]="c.id">
+          <td>{{ label(c) }}</td>
+          <td>{{ c.platform }}</td>
+          <td>{{ c.clientKind }}</td>
+          <td>{{ c.createdAt ? (c.createdAt | date: 'medium') : '—' }}</td>
+          <td>
+            <button
+              type="button"
+              [attr.data-revoke]="c.id"
+              [attr.aria-label]="'Revoke access for ' + label(c)"
+              (click)="revoke(c)"
+            >Revoke</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </ng-template>
+</section>
