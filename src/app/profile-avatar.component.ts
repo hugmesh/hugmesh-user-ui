@@ -39,6 +39,25 @@ export class ProfileAvatarComponent implements OnInit, OnDestroy {
   readonly uploading = signal(false);
   /** Inline validation/upload error surfaced in role=alert. Empty = none. */
   readonly uploadError = signal('');
+  /** True once the served picture failed to load — a pre-022 profile whose bytes
+   *  were discarded by the old upload path. The view falls back to the honest
+   *  placeholder rather than a broken-image box. Reset on every fresh upload. */
+  readonly avatarBroken = signal(false);
+
+  /**
+   * Where the picture is FETCHED from — the BFF's same-origin, cookie-authenticated
+   * serve route, never the stored `avatarUrl`. That column holds an `mxc://` Matrix
+   * media ref, which no browser can fetch; binding it produced a broken image for
+   * everyone who had ever uploaded. A cache-busting stamp is appended after an
+   * upload so the new picture replaces the 5-minute privately-cached old one.
+   */
+  avatarSrc(): string {
+    const v = this.avatarVersion();
+    return v ? `/bff/user/profile/avatar/body?v=${v}` : '/bff/user/profile/avatar/body';
+  }
+
+  /** Bumped after each successful upload to bust the private 5-minute cache. */
+  private readonly avatarVersion = signal(0);
 
   private profileSub?: Subscription;
 
@@ -101,6 +120,10 @@ export class ProfileAvatarComponent implements OnInit, OnDestroy {
     try {
       const updated = await firstValueFrom(this.profiles.uploadAvatar(file));
       this.currentProfile.set(updated);
+      // A fresh upload means fresh bytes: clear any earlier load failure and bust
+      // the serve route's private 5-minute cache so the new picture shows now.
+      this.avatarBroken.set(false);
+      this.avatarVersion.update((v) => v + 1);
       this.previewUrl.set('');
       input.value = '';
     } catch {

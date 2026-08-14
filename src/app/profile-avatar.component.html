@@ -14,14 +14,23 @@
        A just-chosen file shows its local preview alongside until the upload
        completes and replaces the stored avatar. -->
   <div class="avatar-display">
+    <!-- The SERVE ROUTE, not the stored ref. avatarUrl is an mxc:// (a Matrix
+         media ref) — a scheme no browser fetches — so binding it here rendered a
+         broken-image box for every user who had ever uploaded, while the
+         placeholder only appeared for users with none (operator report
+         2026-08-14). The bytes now live in the profile row and are served
+         same-origin, cookie-authenticated, by the BFF.
+         `avatarBroken` covers the pre-022 rows whose bytes were discarded: the
+         route 404s for them and we fall back to the honest placeholder. -->
     <img
-      *ngIf="currentProfile()?.avatarUrl as url"
+      *ngIf="currentProfile()?.avatarUrl && !avatarBroken()"
       data-testid="profile-avatar-image"
-      [src]="url"
+      [src]="avatarSrc()"
+      (error)="avatarBroken.set(true)"
       alt="Your current profile picture"
     />
     <span
-      *ngIf="!currentProfile()?.avatarUrl"
+      *ngIf="!currentProfile()?.avatarUrl || avatarBroken()"
       class="avatar-placeholder"
       data-testid="profile-avatar-placeholder"
       role="img"
