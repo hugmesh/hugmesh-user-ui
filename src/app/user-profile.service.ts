@@ -29,8 +29,12 @@ export interface UserProfile {
    */
   screenReaderName?: string | null;
   /**
-   * Same-origin URL of the caller's profile picture (server column
-   * {@code avatar_url}), set by the avatar-upload flow
+   * The stored REF for the caller's profile picture (server column
+   * {@code avatar_url}) — an {@code mxc://} Matrix media ref, NOT a fetchable
+   * URL. Treat it as a presence flag only; the bytes are served by
+   * {@code GET /bff/user/profile/avatar/body}. (This doc used to claim
+   * "same-origin URL", and the view believed it — hence a broken image for
+   * everyone who had uploaded.) Set by the avatar-upload flow
    * ({@code POST /bff/user/profile/avatar}). NULL/absent when the user has not
    * uploaded one yet — the avatar view then shows a placeholder. Optional so an
    * older host/BFF that omits it still type-checks.
