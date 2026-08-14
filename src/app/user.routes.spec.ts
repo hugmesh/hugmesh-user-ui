@@ -13,7 +13,7 @@ import { NotificationPreferencesComponent } from './notification-preferences.com
 
 /**
  * These specs lock down the federation contract: `./routes` (exposed under the
- * remote name "user") is the module the hugmesh.systems host mounts at the
+ * remote name "user") is the module the hugmesh.net host mounts at the
  * user role-home. The host depends on these exact paths and components, so a
  * regression here would silently break the host's user views.
  */

@@ -5,7 +5,7 @@
 // shell this remote does NOT pull in Bootstrap — it ships only the shared
 // HugMesh a11y baseline so it is accessible served standalone (`ng serve
 // user`) AND consistent in look + focus behaviour once federated into the
-// hugmesh.systems host. The a11y rules below are copied verbatim from the
+// hugmesh.net host. The a11y rules below are copied verbatim from the
 // host's src/styles.scss (two-layer focus ring, underlined links, coarse-pointer
 // targets, .sr util, --hug-* palette, prefers-reduced-motion + prefers-contrast)
 // so a remote served on its own matches the host's accessibility contract.
@@ -66,7 +66,7 @@ h2 {
     padding: 0.6rem 1.2rem;
     // Skip-link chrome uses the cross-repo --hug-* purple contract (a remote
     // styles exclusively with --hug-*; neon gold is host-shell chrome only —
-    // see hugmesh.systems/src/styles.scss:26-28). Previously this used the
+    // see hugmesh.net/src/styles.scss:26-28). Previously this used the
     // host's gold $neon/$charcoal tokens, which leaked gold focus chrome onto a
     // remote whose links already use the purple --hug-accent-soft accent.
     background: var(--hug-bg-1);

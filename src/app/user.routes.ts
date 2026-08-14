@@ -11,7 +11,7 @@ import { PreferencesComponent } from './preferences.component';
 import { NotificationsComponent } from './notifications.component';
 import { NotificationPreferencesComponent } from './notification-preferences.component';
 
-/** Routes exposed by the User native-federation remote. The hugmesh.systems
+/** Routes exposed by the User native-federation remote. The hugmesh.net
  *  host mounts these at the user role-home, so they resolve to the home guide
  *  (default), /profile (profile editor — also exposed standalone for the modal),
  *  /cards (federation card manager), /blocks (self-block list),

@@ -1,5 +1,5 @@
 // REMOTE bundle config for the User micro-frontend (native-federation remote
-// name "user"). The hugmesh.systems host consumes the exposed modules via
+// name "user"). The hugmesh.net host consumes the exposed modules via
 // loadRemoteModule({ remoteName: 'user', exposedModule: '<key>' }) and mounts
 // the USER_ROUTES at the user role-home — so the remote name and the exposed
 // module keys MUST stay unchanged or the host's user views break.

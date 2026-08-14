@@ -11,7 +11,7 @@ import { Browser, BrowserContext, Page } from '@playwright/test';
  * gate the connected-apps surface.
  *
  * The user-ui is the SELF-SERVICE surface: every resource is owner==subject, so
- * there are no in-remote role guards — the hugmesh.systems host enforces
+ * there are no in-remote role guards — the hugmesh.net host enforces
  * ROLE_USER, and the user-bff-api re-enforces owner==subject on every
  * `/bff/user/**` call. The catalogue therefore exercises the THREE coverage
  * classes through that lens:

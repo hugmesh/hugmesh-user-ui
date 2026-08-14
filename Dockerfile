@@ -1,6 +1,6 @@
 # hugmesh-user-ui — builds the User native-federation REMOTE
 # (src → dist/user) and serves it via nginx with CORS so the
-# hugmesh.systems host can fetch its remoteEntry.json cross-origin.
+# hugmesh.net host can fetch its remoteEntry.json cross-origin.
 # Deployed to the hugmesh-frontend namespace, fronted by the fe-gateway at
 # /user. ROLE_USER guarded by the host; paired with hugmesh-user-bff-api.
 # Angular CLI 22 requires Node >= 24.15.

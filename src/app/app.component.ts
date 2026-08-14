@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 
 /**
  * Standalone dev shell for the User remote. Only used when this remote is
- * run on its own (`ng serve user`); in production the hugmesh.systems
+ * run on its own (`ng serve user`); in production the hugmesh.net
  * host federates `./routes` (USER_ROUTES) directly — this shell is not loaded.
  * It supplies the skip link + a <main id="main"> landmark so the remote is
  * keyboard-accessible when served standalone.

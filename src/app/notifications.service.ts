@@ -105,7 +105,7 @@ export interface UserNotification {
  * browser holds no bearer token to attach, so this deliberately does NOT use the
  * native `EventSource` API (which historically couldn't carry auth); cookie-based
  * `fetch` + `ReadableStream` line parsing mirrors the pattern already shipped in
- * hugmesh.systems' host-shell `NotificationToastService`.
+ * hugmesh.net' host-shell `NotificationToastService`.
  *
  * **Reconnect.** The server closes the stream after a 4-minute idle keepalive;
  * a network error or non-2xx also ends the attempt. Either way {@link startLive}
