@@ -108,7 +108,15 @@ textarea {
 
 .add-section {
   background: var(--hug-accent);
-  color: #fff;
+  // Filled with --hug-accent, so the label must contrast against the *accent*,
+  // not against the page. Hardcoded #fff only held for the default purple: the
+  // themer lets --hug-accent be any preset colour, and white-on-accent drops to
+  // 1.16:1 on the nonbinary flag's #fcf434 and 1.25:1 on high-contrast's #00ffff
+  // — an invisible label on a solid button, failing AA on 24 of 38 presets.
+  // --hug-accent-on is the theme's per-preset answer (pure #000/#fff picked by
+  // accent luminance, AA-guaranteed for any sRGB accent). #fff stays as the
+  // var() fallback so a standalone/un-themed remote renders exactly as before.
+  color: var(--hug-accent-on, #fff);
   border: 1px solid var(--hug-accent-soft);
   border-radius: t.$radius-sm;
   padding: 0.35rem 0.7rem;
@@ -201,10 +209,14 @@ textarea {
     font: inherit;
     text-transform: capitalize;
 
+    // Pressed state is an accent FILL, so — as in .add-section above — the label
+    // takes --hug-accent-on rather than a literal white that only survives the
+    // default purple. This is also the only cue distinguishing pressed from
+    // unpressed beyond the fill, so losing it hides which alignment is active.
     &[aria-pressed='true'] {
       background: var(--hug-accent);
       border-color: var(--hug-accent-soft);
-      color: #fff;
+      color: var(--hug-accent-on, #fff);
     }
   }
 
