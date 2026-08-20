@@ -67,4 +67,48 @@ describe('SessionService', () => {
     expect(s.isMod()).toBe(true);
     expect(s.isAdmin()).toBe(false);
   });
+
+  describe('same-document session-change channel (the sign-out propagation seam)', () => {
+    // The host shell's Sign out removes the hug.session mirror and dispatches a
+    // window event; same-document writes raise NO `storage` event, so that
+    // broadcast is the ONLY way this remote learns the session ended. This copy
+    // used to listen on the pre-rebrand 'snap-session-change' name only — deaf to
+    // the canonical 'hug-session-change' every other remote speaks — so its
+    // in-memory session kept rendering the signed-out user's surfaces until a
+    // full reload (operator report 2026-08-19).
+    it('drops the in-memory session on the CANONICAL hug-session-change event', () => {
+      localStorage.setItem('hug.session', JSON.stringify(makeSession(['user'])));
+      const s = TestBed.inject(SessionService);
+      expect(s.loggedIn()).toBe(true);
+      localStorage.removeItem('hug.session'); // the host's clear() already removed the mirror
+      window.dispatchEvent(new Event('hug-session-change'));
+      expect(s.loggedIn()).withContext('sign-out reaches this remote in-page').toBe(false);
+    });
+
+    it('still drops the session on the LEGACY snap-session-change event (mixed-version host)', () => {
+      localStorage.setItem('hug.session', JSON.stringify(makeSession(['user'])));
+      const s = TestBed.inject(SessionService);
+      expect(s.loggedIn()).toBe(true);
+      localStorage.removeItem('hug.session');
+      window.dispatchEvent(new Event('snap-session-change'));
+      expect(s.loggedIn()).withContext('a not-yet-redeployed host is still heard').toBe(false);
+    });
+
+    it('broadcasts BOTH channel names on clear()', () => {
+      localStorage.setItem('hug.session', JSON.stringify(makeSession(['user'])));
+      const s = TestBed.inject(SessionService);
+      const canonical = jasmine.createSpy('canonical');
+      const legacy = jasmine.createSpy('legacy');
+      window.addEventListener('hug-session-change', canonical);
+      window.addEventListener('snap-session-change', legacy);
+      try {
+        s.clear();
+        expect(canonical).withContext('canonical listeners hear the sign-out').toHaveBeenCalled();
+        expect(legacy).withContext('legacy listeners hear the sign-out').toHaveBeenCalled();
+      } finally {
+        window.removeEventListener('hug-session-change', canonical);
+        window.removeEventListener('snap-session-change', legacy);
+      }
+    });
+  });
 });
