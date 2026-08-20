@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, from } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
+import { NotificationsInAppFloorService } from './api/services/notifications-in-app-floor.service';
 
 /** Notification category identifiers; mirrors the user-bff NotificationCategory enum. */
 export type NotificationCategory =
@@ -95,10 +95,22 @@ export interface UserNotification {
  * BehaviorSubject is updated optimistically when {@link markRead} resolves, and
  * (once {@link startLive} is called) pushed to in real time by the SSE stream.
  *
+ * <p><b>ng-openapi-gen migration:</b> the two plain CRUD calls now DELEGATE to
+ * the generated, typed {@link NotificationsInAppFloorService} (under
+ * {@code src/app/api}, generated from the user-bff-api OpenAPI spec) instead of
+ * hand-rolling {@code HttpClient} URLs — following the {@link UserProfileService}
+ * reference migration. The generated client calls the SAME same-origin
+ * {@code /bff/user/**} paths (its {@code rootUrl} defaults to '') through
+ * {@code HttpClient}, so the wire behaviour — and the auth interceptor that
+ * attaches the HttpOnly `bff_` session cookie — are unchanged. The SSE stream is
+ * deliberately NOT migrated: the BFF's `text/event-stream` endpoint has no
+ * generated counterpart (ng-openapi-gen models no streaming response), and it
+ * needs `fetch()` + `ReadableStream` anyway — see {@link consumeLiveStream}.
+ *
  * Endpoints (user-bff-api `NotificationsController`):
- * - `GET  /bff/user/notifications`            → {@link list} (newest-first, optional `?limit`)
- * - `POST /bff/user/notifications/{id}/read`  → {@link markRead} (idempotent, 204)
- * - `GET  /bff/user/notifications/events`     → {@link startLive} (SSE, real-time push)
+ * - `GET  /bff/user/notifications`            → {@link list} (newest-first, optional `?limit`) → `NotificationsInAppFloorService.list({limit})`
+ * - `POST /bff/user/notifications/{id}/read`  → {@link markRead} (idempotent, 204) → `markRead({id})`
+ * - `GET  /bff/user/notifications/events`     → {@link startLive} (SSE, real-time push; hand-rolled `fetch`)
  *
  * **SSE auth.** Like every other `/bff/**` call, the stream authenticates via the
  * HttpOnly `bff_` session cookie (`fetch(..., { credentials: 'include' })`) — the
@@ -118,7 +130,8 @@ export interface UserNotification {
  */
 @Injectable({ providedIn: 'root' })
 export class NotificationsService {
-  private readonly http = inject(HttpClient);
+  private readonly notificationsApi = inject(NotificationsInAppFloorService);
+  // Base path for the hand-rolled SSE fetch only — see consumeLiveStream().
   private readonly base = '/bff/user/notifications';
 
   /** Fixed reconnect delay after a dropped/failed SSE attempt. */
@@ -159,11 +172,11 @@ export class NotificationsService {
    * @returns An Observable that emits the notification list.
    */
   list(limit?: number): Observable<UserNotification[]> {
-    const params: Record<string, string> =
-      limit !== undefined ? { limit: String(limit) } : {};
-    return this.http.get<UserNotification[] | null>(this.base, { params }).pipe(
+    // The generated request builder drops an undefined query param, so an
+    // absent limit still sends a bare GET /bff/user/notifications.
+    return from(this.notificationsApi.list({ limit })).pipe(
       // Coerce null (e.g. 204 no-content) to an empty array.
-      map((ns) => ns ?? []),
+      map((ns) => (ns ?? []) as unknown as UserNotification[]),
       // Push the normalised list so unreadCount$ updates for any open subscriber.
       tap((ns) => this.notificationsSubject.next(ns)),
     );
@@ -178,18 +191,16 @@ export class NotificationsService {
    * @returns An Observable that completes when the BFF confirms the mark (204).
    */
   markRead(id: string): Observable<void> {
-    return this.http
-      .post<void>(`${this.base}/${encodeURIComponent(id)}/read`, null)
-      .pipe(
-        // Optimistically stamp readAt on the cached entry so unreadCount$ drops now.
-        tap(() => {
-          const now = new Date().toISOString();
-          const updated = this.notificationsSubject.value.map((n) =>
-            n.id === id ? { ...n, readAt: now } : n,
-          );
-          this.notificationsSubject.next(updated);
-        }),
-      );
+    return from(this.notificationsApi.markRead({ id })).pipe(
+      // Optimistically stamp readAt on the cached entry so unreadCount$ drops now.
+      tap(() => {
+        const now = new Date().toISOString();
+        const updated = this.notificationsSubject.value.map((n) =>
+          n.id === id ? { ...n, readAt: now } : n,
+        );
+        this.notificationsSubject.next(updated);
+      }),
+    );
   }
 
   /**

@@ -4,6 +4,16 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { firstValueFrom } from 'rxjs';
 import { BlockService, UserBlock } from './block.service';
 
+/**
+ * Let the generated ng-openapi-gen client's promise-based delegation settle.
+ * `BlockService` now delegates to the generated `SelfBlockService`, whose methods
+ * return Promises, so a fire-and-forget follow-up refresh (the `list()` in
+ * `block()`/`unblock()`) pushes onto `blocks$` one microtask AFTER its response
+ * is flushed. A real macrotask tick guarantees that has happened.
+ */
+const settle = (): Promise<void> =>
+  new Promise<void>((resolve) => setTimeout(resolve, 0));
+
 describe('BlockService', () => {
   let service: BlockService;
   let httpMock: HttpTestingController;
@@ -44,6 +54,7 @@ describe('BlockService', () => {
 
     // tap() triggers a follow-up list() refresh.
     httpMock.expectOne('/bff/user/blocks').flush([block]);
+    await settle();
     expect(await firstValueFrom(service.blocks$)).toEqual([block]);
   });
 
@@ -54,6 +65,7 @@ describe('BlockService', () => {
     delReq.flush(null);
     await del;
     httpMock.expectOne('/bff/user/blocks').flush([]);
+    await settle();
     expect(await firstValueFrom(service.blocks$)).toEqual([]);
   });
 

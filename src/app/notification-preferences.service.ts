@@ -28,6 +28,24 @@ export interface NotificationPreference {
  * - `GET /bff/user/notification-preferences` → all four category preferences
  * - `PUT /bff/user/notification-preferences` → `{ category, enabled }` upsert
  *
+ * <p><b>NOT migrated to the generated ng-openapi-gen client</b> — the last of the
+ * nine datastore services still hand-rolling `HttpClient`, and deliberately so.
+ * The blocker is upstream in the spec, not here: user-bff-api declares TWO
+ * distinct nested records both named `PreferenceUpsert` —
+ * `UserPreferencesController.PreferenceUpsert` (`{key, value}`) and
+ * `NotificationPreferenceController.PreferenceUpsert` (`{category, enabled}`) —
+ * and springdoc collapses them into ONE
+ * `#/components/schemas/PreferenceUpsert`. The committed `openapi.json` therefore
+ * describes THIS endpoint's PUT body as `{key, value}`, so the generated
+ * `src/app/api/services/notification-preferences.service.ts` `put1()` is typed —
+ * and would serialise — the wrong shape for a controller that requires
+ * `category` + `enabled`. Migrating needs the BFF to disambiguate the two schemas
+ * first (e.g. `@Schema(name = "NotificationPreferenceUpsert")`), then a
+ * `npm run gen:spec` here. Noted while migrating the other eight: the same spec
+ * (and the controller) says this endpoint returns a `Map<String, Boolean>`, not
+ * the `NotificationPreference[]` modelled below — a separate defect from the
+ * client migration, and not addressed here.
+ *
  * @see {@link NotificationPreferencesComponent} — primary consumer of this service.
  */
 @Injectable({ providedIn: 'root' })

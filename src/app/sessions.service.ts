@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, from } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
+import { SessionsService as GenSessionsService } from './api/services/sessions.service';
 
 /**
  * One ACTIVE LOGIN SESSION belonging to the caller, matched field-for-field to the
@@ -27,14 +27,22 @@ export interface UserSession {
  * param) and, on revoke, validates the target session belongs to the caller before
  * deleting — so a user can only ever list/revoke their own sessions.
  *
+ * <p><b>ng-openapi-gen migration:</b> this service now DELEGATES to the generated,
+ * typed {@link GenSessionsService} (under {@code src/app/api}, generated from the
+ * user-bff-api OpenAPI spec) instead of hand-rolling {@code HttpClient} URLs —
+ * following the {@link UserProfileService} reference migration. The generated
+ * client calls the SAME same-origin {@code /bff/user/**} paths (its
+ * {@code rootUrl} defaults to '') through {@code HttpClient}, so the wire
+ * behaviour — and the auth interceptor that attaches the HttpOnly `bff_` session
+ * cookie — are unchanged.
+ *
  * Endpoints (user-bff-api SessionsController):
- *   GET    /bff/user/sessions       → list()
- *   DELETE /bff/user/sessions/{id}  → revoke(id)
+ *   GET    /bff/user/sessions       → list()      → GenSessionsService.listSessions()
+ *   DELETE /bff/user/sessions/{id}  → revoke(id)  → revokeSession({id})
  */
 @Injectable({ providedIn: 'root' })
 export class SessionsService {
-  private readonly http = inject(HttpClient);
-  private readonly base = '/bff/user/sessions';
+  private readonly sessionsApi = inject(GenSessionsService);
 
   private readonly sessionsSubject = new BehaviorSubject<UserSession[]>([]);
   /** The caller's own active login sessions (latest list loaded). */
@@ -44,8 +52,8 @@ export class SessionsService {
    *  body is coerced to an empty array (both in the emitted value and the subject)
    *  so callers always get an array. */
   list(): Observable<UserSession[]> {
-    return this.http.get<UserSession[] | null>(this.base).pipe(
-      map((sessions) => sessions ?? []),
+    return from(this.sessionsApi.listSessions()).pipe(
+      map((sessions) => (sessions ?? []) as unknown as UserSession[]),
       tap((sessions) => this.sessionsSubject.next(sessions)),
     );
   }
@@ -54,6 +62,8 @@ export class SessionsService {
    *  target session belongs to the caller (JWT subject) before deleting the
    *  {@code bff_session} row. */
   revoke(id: string): Observable<Record<string, unknown>> {
-    return this.http.delete<Record<string, unknown>>(`${this.base}/${encodeURIComponent(id)}`);
+    return from(this.sessionsApi.revokeSession({ id })).pipe(
+      map((result) => result as Record<string, unknown>),
+    );
   }
 }
