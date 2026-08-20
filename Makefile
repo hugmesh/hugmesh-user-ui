@@ -62,6 +62,6 @@ pentest-dast:
 	else \
 		echo "[pentest:dast] harness not found at $(PENTEST_HARNESS_DIR)/run-pentest.sh."; \
 		echo "[pentest:dast] Clone it, then re-run, e.g.:"; \
-		echo "[pentest:dast]   git clone https://github.com/hugmesh-net/hugmesh-generator /tmp/hugmesh-generator"; \
+		echo "[pentest:dast]   git clone https://github.com/hugmesh/hugmesh-generator /tmp/hugmesh-generator"; \
 		echo "[pentest:dast]   make pentest DAST_TARGET_URL=$(DAST_TARGET_URL) PENTEST_HARNESS_DIR=/tmp/hugmesh-generator/tests/pentest"; \
 	fi
