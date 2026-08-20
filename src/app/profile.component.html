@@ -194,9 +194,15 @@
       aria-describedby="profile-password-help"
     />
     <button data-testid="profile-change-password" type="submit">Change password</button>
+    <!-- Tone is set by the component (see SectionTone): a stubbed ack renders as
+         a WARNING (nothing was applied), an IdP refusal as an error. The message
+         is interpolated TEXT only — never [innerHTML] — so the BFF/IdP-supplied
+         reason can never inject markup. -->
     <span
       *ngIf="passwordMessage()"
       class="field-message"
+      [class.field-warning]="passwordTone() === 'warning'"
+      [class.field-error]="passwordTone() === 'error'"
       data-testid="profile-password-message"
       role="status"
       aria-live="polite"
@@ -220,9 +226,12 @@
       confirm it before the change takes effect.
     </span>
     <button data-testid="profile-change-email" type="submit">Change email</button>
+    <!-- Same tone contract as the password message above. -->
     <span
       *ngIf="emailMessage()"
       class="field-message"
+      [class.field-warning]="emailTone() === 'warning'"
+      [class.field-error]="emailTone() === 'error'"
       data-testid="profile-email-message"
       role="status"
       aria-live="polite"

@@ -74,6 +74,21 @@
   .field-message {
     color: var(--hug-text-muted);
     font-weight: 600;
+
+    // Tone overrides driven by the component (mirrors the .hug-status/.hug-error
+    // convention in src/styles.scss: the tone is set in code via SectionTone,
+    // never assumed by the stylesheet). Nested so the component-scoped
+    // specificity beats the muted base colour above — the GLOBAL .field-error
+    // rule alone would lose to the scoped .field-message.
+    // The hex fallbacks keep the tones visible when this remote is federated
+    // into a host whose :root palette predates the --hug-warning token.
+    &.field-warning {
+      color: var(--hug-warning, #ffb74d);
+    }
+
+    &.field-error {
+      color: var(--hug-error, #ff6b6b);
+    }
   }
 
   // Live aria-label preview of what assistive tech will announce for this user.

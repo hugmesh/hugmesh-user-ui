@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { ProfileComponent } from './profile.component';
@@ -166,11 +167,19 @@ describe('ProfileComponent', () => {
     component.oldPassword = 'old';
     component.newPassword = 'new';
     await component.changePassword();
+    fixture.detectChanges();
 
     expect(profiles.changePassword).toHaveBeenCalledWith('old', 'new');
     expect(component.oldPassword).toBe('');
     expect(component.newPassword).toBe('');
     expect(component.passwordMessage()).toContain('submitted');
+    // A LIVE ack renders in the muted default tone — success is unchanged by
+    // the warning/error surfacing below.
+    expect(component.passwordTone()).toBe('info');
+    const el: HTMLElement = fixture.nativeElement;
+    const msg = el.querySelector('[data-testid="profile-password-message"]')!;
+    expect(msg.classList.contains('field-warning')).toBeFalse();
+    expect(msg.classList.contains('field-error')).toBeFalse();
   });
 
   it('requires both passwords before calling the BFF', async () => {
@@ -187,14 +196,156 @@ describe('ProfileComponent', () => {
   it('POSTs a trimmed email change and clears the field on success', async () => {
     fixture.detectChanges();
     await fixture.whenStable();
-    profiles.changeEmail.and.resolveTo({ op: 'email-change', status: 'queued', casdoor: 'stubbed' });
+    profiles.changeEmail.and.resolveTo({ op: 'email-change', status: 'submitted', casdoor: 'live' });
 
     component.newEmail = '  new@example.com ';
     await component.changeEmail();
 
     expect(profiles.changeEmail).toHaveBeenCalledWith('new@example.com');
     expect(component.newEmail).toBe('');
-    expect(component.emailMessage()).toContain('queued');
+    expect(component.emailMessage()).toContain('submitted');
+    expect(component.emailTone()).toBe('info');
+  });
+
+  // The BFF (user-bff-api PR #7) propagates a Casdoor refusal as a 400 whose
+  // body is ApiExceptionHandler's `{"error": "<message>"}` shape, carrying the
+  // IdP's own message; a disabled account surface acks `casdoor: "stubbed"`
+  // WITHOUT applying anything. These pin the section-level surfacing of both.
+  describe('change-password / change-email outcome surfacing', () => {
+    const refusal = new HttpErrorResponse({
+      status: 400,
+      statusText: 'Bad Request',
+      url: '/bff/user/profile/password',
+      error: {
+        error:
+          'identity provider refused set-password: password or code is incorrect, you have 4 remaining chances',
+      },
+    });
+
+    beforeEach(async () => {
+      fixture.detectChanges();
+      await fixture.whenStable();
+    });
+
+    it("surfaces the IdP's refusal message from the 400 body as an error", async () => {
+      profiles.changePassword.and.rejectWith(refusal);
+      component.oldPassword = 'wrong-old';
+      component.newPassword = 'new';
+      await component.changePassword();
+      fixture.detectChanges();
+
+      expect(component.passwordMessage()).toContain(
+        'password or code is incorrect, you have 4 remaining chances',
+      );
+      expect(component.passwordMessage()).toContain('Could not change your password');
+      expect(component.passwordTone()).toBe('error');
+      const el: HTMLElement = fixture.nativeElement;
+      const msg = el.querySelector('[data-testid="profile-password-message"]')!;
+      expect(msg.classList.contains('field-error')).toBeTrue();
+      expect(msg.classList.contains('field-warning')).toBeFalse();
+      // The inputs are kept so the user can correct and retry.
+      expect(component.oldPassword).toBe('wrong-old');
+    });
+
+    it('falls back to the generic text when the 400 body has no message', async () => {
+      profiles.changePassword.and.rejectWith(
+        new HttpErrorResponse({ status: 400, statusText: 'Bad Request', error: {} }),
+      );
+      component.oldPassword = 'old';
+      component.newPassword = 'new';
+      await component.changePassword();
+      expect(component.passwordMessage()).toBe('Could not change your password. Please try again.');
+      expect(component.passwordTone()).toBe('error');
+    });
+
+    it('falls back to the generic text on a non-400 / non-HTTP failure', async () => {
+      profiles.changePassword.and.rejectWith(
+        new HttpErrorResponse({ status: 502, statusText: 'Bad Gateway', error: { error: 'upstream sad' } }),
+      );
+      component.oldPassword = 'old';
+      component.newPassword = 'new';
+      await component.changePassword();
+      expect(component.passwordMessage()).toBe('Could not change your password. Please try again.');
+
+      profiles.changePassword.and.rejectWith(new Error('network down'));
+      await component.changePassword();
+      expect(component.passwordMessage()).toBe('Could not change your password. Please try again.');
+    });
+
+    it('renders the BFF-supplied refusal as TEXT, never as HTML', async () => {
+      profiles.changePassword.and.rejectWith(
+        new HttpErrorResponse({
+          status: 400,
+          statusText: 'Bad Request',
+          error: { error: 'refused <img src=x onerror="boom()"> <b>now</b>' },
+        }),
+      );
+      component.oldPassword = 'old';
+      component.newPassword = 'new';
+      await component.changePassword();
+      fixture.detectChanges();
+
+      const el: HTMLElement = fixture.nativeElement;
+      const msg = el.querySelector('[data-testid="profile-password-message"]')!;
+      // Interpolation escapes the payload: it stays visible as literal text and
+      // never becomes child elements.
+      expect(msg.textContent).toContain('<img src=x onerror="boom()">');
+      expect(msg.querySelector('img, b')).toBeNull();
+    });
+
+    it('renders a STUBBED password ack as a warning, never as success', async () => {
+      profiles.changePassword.and.resolveTo({
+        op: 'password-change',
+        status: 'queued',
+        casdoor: 'stubbed',
+      });
+      component.oldPassword = 'old';
+      component.newPassword = 'new';
+      await component.changePassword();
+      fixture.detectChanges();
+
+      expect(component.passwordMessage()).toContain('not active on this server');
+      expect(component.passwordMessage()).not.toContain('queued');
+      expect(component.passwordTone()).toBe('warning');
+      const el: HTMLElement = fixture.nativeElement;
+      const msg = el.querySelector('[data-testid="profile-password-message"]')!;
+      expect(msg.classList.contains('field-warning')).toBeTrue();
+      expect(msg.classList.contains('field-error')).toBeFalse();
+      // Passwords never linger in the inputs, applied or not.
+      expect(component.oldPassword).toBe('');
+      expect(component.newPassword).toBe('');
+    });
+
+    it('renders a STUBBED email ack as a warning and keeps the typed address', async () => {
+      profiles.changeEmail.and.resolveTo({ op: 'email-change', status: 'queued', casdoor: 'stubbed' });
+      component.newEmail = 'new@example.com';
+      await component.changeEmail();
+      fixture.detectChanges();
+
+      expect(component.emailMessage()).toContain('not active on this server');
+      expect(component.emailTone()).toBe('warning');
+      const el: HTMLElement = fixture.nativeElement;
+      const msg = el.querySelector('[data-testid="profile-email-message"]')!;
+      expect(msg.classList.contains('field-warning')).toBeTrue();
+      // Nothing was applied; the (non-secret) address stays for a later retry.
+      expect(component.newEmail).toBe('new@example.com');
+    });
+
+    it("surfaces the IdP's refusal message on the email leg too", async () => {
+      profiles.changeEmail.and.rejectWith(
+        new HttpErrorResponse({
+          status: 400,
+          statusText: 'Bad Request',
+          url: '/bff/user/profile/email',
+          error: { error: 'identity provider refused update-user(email): org policy' },
+        }),
+      );
+      component.newEmail = 'new@example.com';
+      await component.changeEmail();
+      expect(component.emailMessage()).toContain('org policy');
+      expect(component.emailMessage()).toContain('Could not change your email');
+      expect(component.emailTone()).toBe('error');
+    });
   });
 
   it('surfaces a friendly message when profile load fails', async () => {

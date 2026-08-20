@@ -1,10 +1,22 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { UserProfile, UserProfileService } from './user-profile.service';
+import { CasdoorAck, UserProfile, UserProfileService } from './user-profile.service';
 import { ProfileAvatarComponent } from './profile-avatar.component';
 import { accessibleName, defaultScreenReaderName, isPrintableAscii } from './accessible-name';
+
+/**
+ * Visual tone of a section feedback line (password/email change):
+ * - `'info'`    — the muted default (acknowledgements, success);
+ * - `'warning'` — the request was ACKED but NOT applied (the BFF's stub path);
+ * - `'error'`   — the request failed or was refused by the IdP.
+ *
+ * Mirrors the `statusIsError` convention above: the tone is written only by the
+ * component's own handlers, so the stylesheet never has to guess it.
+ */
+export type SectionTone = 'info' | 'warning' | 'error';
 
 /**
  * Profile editor for the caller's OWN profile. ROLE_USER only — `owner = JWT
@@ -110,12 +122,16 @@ export class ProfileComponent implements OnInit {
   newPassword = '';
   /** Status/error for the change-password section (separate from the main form). */
   readonly passwordMessage = signal('');
+  /** Tone of {@link passwordMessage}; written only via {@link setPasswordMessage}. */
+  readonly passwordTone = signal<SectionTone>('info');
 
   // ── Email change fields ───────────────────────────────────────────────────
   /** Bound to the new-email input in the change-email section. */
   newEmail = '';
   /** Status/error for the change-email section (separate from the main form). */
   readonly emailMessage = signal('');
+  /** Tone of {@link emailMessage}; written only via {@link setEmailMessage}. */
+  readonly emailTone = signal<SectionTone>('info');
 
   /** Load the caller's profile on component init and seed the editable model. */
   async ngOnInit(): Promise<void> {
@@ -232,39 +248,137 @@ export class ProfileComponent implements OnInit {
   /**
    * Change the caller's Casdoor password. Relays the request to the BFF, which
    * forwards it to the Casdoor IdP. Clears the form fields on success.
+   *
+   * Outcomes (user-bff-api ProfileController + CasdoorUserClient, PR #7):
+   * - live ack (`casdoor: "live"`) — success, muted confirmation;
+   * - stub ack (`casdoor: "stubbed"`) — the BFF acked WITHOUT an IdP write
+   *   (`casdoor.account.enabled=false`), so the password did NOT change:
+   *   rendered as a WARNING, never as success;
+   * - 400 `{"error": …}` — the IdP refused the change (e.g. wrong current
+   *   password); the IdP's own message is surfaced, with the generic text as
+   *   the fallback when the body carries none.
    */
   async changePassword(): Promise<void> {
     if (!this.oldPassword || !this.newPassword) {
-      this.passwordMessage.set('Both the current and new password are required.');
+      this.setPasswordMessage('Both the current and new password are required.', 'error');
       return;
     }
     try {
       const ack = await this.profiles.changePassword(this.oldPassword, this.newPassword);
-      this.passwordMessage.set(`Password change ${ack.status} (Casdoor: ${ack.casdoor}).`);
-      // Clear inputs so the fields do not retain the password in memory.
+      if (ProfileComponent.isStubbedAck(ack)) {
+        this.setPasswordMessage(
+          'Password changes are not active on this server, so your password was NOT changed. Please contact an administrator.',
+          'warning',
+        );
+      } else {
+        this.setPasswordMessage(`Password change ${ack.status} (Casdoor: ${ack.casdoor}).`, 'info');
+      }
+      // Clear inputs so the fields do not retain the password in memory —
+      // on the stub ack too: nothing was applied, but passwords must not linger.
       this.oldPassword = '';
       this.newPassword = '';
-    } catch {
-      this.passwordMessage.set('Could not change your password. Please try again.');
+    } catch (err) {
+      this.setPasswordMessage(
+        ProfileComponent.failureText('Could not change your password', ProfileComponent.bffErrorMessage(err)),
+        'error',
+      );
     }
   }
 
   /**
    * Change the caller's Casdoor account email. Relays the request to the BFF.
-   * Clears the form field on success.
+   * Clears the form field on success. Same outcome handling as
+   * {@link changePassword}: stub ack → warning, IdP refusal → its message,
+   * anything else → the generic fallback. On the stub the typed address is
+   * KEPT (nothing was applied and it is not a secret, unlike the passwords).
    */
   async changeEmail(): Promise<void> {
     if (!this.newEmail || !this.newEmail.trim()) {
-      this.emailMessage.set('A new email address is required.');
+      this.setEmailMessage('A new email address is required.', 'error');
       return;
     }
     try {
       const ack = await this.profiles.changeEmail(this.newEmail.trim());
-      this.emailMessage.set(`Email change ${ack.status} (Casdoor: ${ack.casdoor}).`);
-      this.newEmail = '';
-    } catch {
-      this.emailMessage.set('Could not change your email. Please try again.');
+      if (ProfileComponent.isStubbedAck(ack)) {
+        this.setEmailMessage(
+          'Email changes are not active on this server, so your email was NOT changed. Please contact an administrator.',
+          'warning',
+        );
+      } else {
+        this.setEmailMessage(`Email change ${ack.status} (Casdoor: ${ack.casdoor}).`, 'info');
+        this.newEmail = '';
+      }
+    } catch (err) {
+      this.setEmailMessage(
+        ProfileComponent.failureText('Could not change your email', ProfileComponent.bffErrorMessage(err)),
+        'error',
+      );
     }
+  }
+
+  /** Set the change-password feedback line together with its tone. */
+  private setPasswordMessage(message: string, tone: SectionTone): void {
+    this.passwordMessage.set(message);
+    this.passwordTone.set(tone);
+  }
+
+  /** Set the change-email feedback line together with its tone. */
+  private setEmailMessage(message: string, tone: SectionTone): void {
+    this.emailMessage.set(message);
+    this.emailTone.set(tone);
+  }
+
+  /**
+   * `true` when the BFF acknowledged WITHOUT a live IdP write — the compose
+   * mesh's documented stub path (`casdoor.account.enabled=false`) acks
+   * `{status: "queued", casdoor: "stubbed"}`, which is NOT a success: the
+   * credential did not change. Both fields are checked so a future ack that
+   * inlines the marker (e.g. `status: "queued (Casdoor: stubbed)"`) still trips.
+   */
+  private static isStubbedAck(ack: CasdoorAck): boolean {
+    return `${ack?.casdoor ?? ''} ${ack?.status ?? ''}`.includes('stubbed');
+  }
+
+  /**
+   * Compose a failure line: the BFF's own reason when one was carried, else the
+   * generic retry text (byte-for-byte the pre-existing fallback message).
+   */
+  private static failureText(generic: string, reason: string | null): string {
+    return reason ? `${generic}: ${reason}` : `${generic}. Please try again.`;
+  }
+
+  /**
+   * Extract the BFF's human-readable refusal message from a rejected HTTP call.
+   *
+   * user-bff-api's `ApiExceptionHandler` renders every `ApiException` as
+   * `{"error": "<message>"}` with the carried status; since its PR #7 a Casdoor
+   * refusal (wrong current password, unknown user, org policy) arrives as a
+   * 400 in that shape carrying the IdP's own message (e.g. *"password or code
+   * is incorrect, you have N remaining chances"*).
+   *
+   * Returns the message sanitized to PLAIN TEXT — control characters stripped,
+   * whitespace collapsed, length-capped — and the template renders it via
+   * interpolation only (never `[innerHTML]`), so upstream content can never be
+   * injected as markup. Returns `null` when the rejection carries no usable
+   * message (network failure, non-400 status, HTML error page, blank message);
+   * callers then fall back to their generic text.
+   */
+  private static bffErrorMessage(err: unknown): string | null {
+    if (!(err instanceof HttpErrorResponse) || err.status !== 400) {
+      return null;
+    }
+    const body: unknown = err.error;
+    const msg =
+      typeof body === 'object' && body !== null ? (body as Record<string, unknown>)['error'] : null;
+    if (typeof msg !== 'string') {
+      return null;
+    }
+    // Strip C0 control chars + DEL, then collapse whitespace to one line.
+    const text = msg.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!text) {
+      return null;
+    }
+    return text.length > 300 ? `${text.slice(0, 299)}…` : text;
   }
 
   /**
