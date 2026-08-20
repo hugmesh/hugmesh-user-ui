@@ -25,7 +25,7 @@ export interface SnapSession {
  * This is the canonical HugMesh SessionService (copied verbatim in each
  * native-federation remote because the federation runtime forbids shared singletons
  * across remote boundaries). Every copy reads/writes the SAME `hug.session`
- * localStorage key and dispatches/listens for the SAME `snap-session-change`
+ * localStorage key and dispatches/listens for the SAME `hug-session-change`
  * broadcast so all in-page instances (host shell + every loaded remote) stay in sync
  * without a round-trip to the server.
  *
@@ -34,13 +34,27 @@ export interface SnapSession {
  * the caller's role cannot use) — the BFF APIs remain the authoritative gate.
  *
  * @see {@link SnapSession} for the full session shape.
- * @see `snap-session-change` custom event — dispatched on every write so in-page
+ * @see `hug-session-change` custom event — dispatched on every write so in-page
  *   remote copies re-read without a storage event (which only fires in OTHER tabs).
  */
 @Injectable({ providedIn: 'root' })
 export class SessionService {
   private readonly key = 'hug.session';
-  private readonly channel = 'snap-session-change';
+  /** The CANONICAL same-document session-change seam — the exact string every
+   *  other remote's SessionService (login-ui, admin-ui, mod-ui, matrix-ui,
+   *  mastodon-ui, forum-ui, wiki-ui, tube-ui, owncast-ui, user-mesh-ui) declares.
+   *  This copy USED to carry the pre-rebrand 'snap-session-change' name: it was
+   *  deaf to every canonical broadcast (including the host shell's sign-out once
+   *  the host moved to the canonical name), so this remote's in-memory session
+   *  kept rendering the signed-out user's surfaces until a full page reload
+   *  (operator report 2026-08-19, "need to clear cache every time after log out"). */
+  private readonly channel = 'hug-session-change';
+  /** The legacy pre-rebrand channel name. Still LISTENED ON (so a
+   *  not-yet-redeployed host shell that only dispatches the old name keeps this
+   *  remote in sync during a mixed-version rollout) and still dispatched
+   *  alongside the canonical name for the mirror-image rollout gap. Remove once
+   *  every deployed host/remote speaks the canonical channel. */
+  private readonly legacyChannel = 'snap-session-change';
 
   /** Reactive signal over the current session; `null` when logged out. */
   readonly session = signal<SnapSession | null>(this.load());
@@ -106,13 +120,16 @@ export class SessionService {
     // Each native-federation remote and the host shell get their OWN Angular
     // injector, so each holds its OWN SessionService instance. We keep them in
     // sync by:
-    //  1. Listening for `snap-session-change` (same-document custom event, fired by
+    //  1. Listening for `hug-session-change` (same-document custom event, fired by
     //     whichever instance last called set/patch/clear) so in-page remotes stay
-    //     current without a storage event.
+    //     current without a storage event — plus the legacy `snap-session-change`
+    //     name during mixed-version rollouts. Both handlers just re-read the
+    //     mirror (idempotent), so hearing a dual-dispatched write twice is safe.
     //  2. Listening for the `storage` event so cross-tab writes (e.g. logging in a
     //     second tab) propagate here too.
     if (typeof window !== 'undefined') {
       window.addEventListener(this.channel, () => this.session.set(this.load()));
+      window.addEventListener(this.legacyChannel, () => this.session.set(this.load()));
       window.addEventListener('storage', (e) => {
         if (e.key === this.key) this.session.set(this.load());
       });
@@ -178,11 +195,15 @@ export class SessionService {
   }
 
   /**
-   * Dispatch a same-document `snap-session-change` event so the other in-page
+   * Dispatch a same-document `hug-session-change` event so the other in-page
    * SessionService instances (host shell + other loaded remotes) re-read from
-   * `localStorage` without waiting for a cross-tab `storage` event.
+   * `localStorage` without waiting for a cross-tab `storage` event. The legacy
+   * `snap-session-change` name is dispatched too, for a not-yet-redeployed
+   * listener during mixed-version rollouts (see {@link legacyChannel}).
    */
   private broadcast(): void {
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event(this.channel));
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new Event(this.channel));
+    window.dispatchEvent(new Event(this.legacyChannel));
   }
 }
