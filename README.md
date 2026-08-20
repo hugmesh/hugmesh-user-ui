@@ -1,6 +1,6 @@
 # hugmesh-user-ui
 
-The self-service **user console** for [HugMesh](https://github.com/hugmesh-net), a
+The self-service **user console** for [HugMesh](https://github.com/hugmesh), a
 federated community platform with Matrix/Mastodon interoperability. This is
 where a signed-in member manages their own profile and avatar, publishes
 "cards" (sandboxed rich mini-pages), controls their block list and visibility,
@@ -8,8 +8,8 @@ manages connected external clients, and reads notifications — always scoped to
 their own account, never anyone else's.
 
 It ships as an **Angular 22 native-federation remote**, paired with the
-[`hugmesh-user-bff-api`](https://github.com/hugmesh-net/hugmesh-user-bff-api)
-backend-for-frontend. The [`hugmesh-host-shell`](https://github.com/hugmesh-net/hugmesh-host-shell)
+[`hugmesh-user-bff-api`](https://github.com/hugmesh/hugmesh-user-bff-api)
+backend-for-frontend. The [`hugmesh-host-shell`](https://github.com/hugmesh/hugmesh-host-shell)
 host federates this remote's exposed `USER_ROUTES` at runtime and mounts them
 at the user role-home, so they resolve to:
 
@@ -184,9 +184,14 @@ the regenerated client.
 
 `ng-openapi-gen.json` reads `openapi.json` and writes typed models/services to
 `src/app/api` (`skipJsonSuffix`, `enumStyle: alias`). The hand-written
-`*.service.ts` datastore services delegate to these generated typed services
-(the `UserProfileService` profile + home-guide feature is migrated; the remaining
-services are queued for migration — see [Deferrals](#deferrals)).
+`*.service.ts` datastore services delegate to these generated typed services —
+eight of nine are migrated (`UserProfileService`, `CardsService`, `BlockService`,
+`SelfSilenceService`, `ConnectedClientsService`, `PreferencesService`,
+`SessionsService`, `NotificationsService`). Three calls stay hand-rolled for
+reasons the generator cannot cover — the multipart avatar upload, the
+octet-stream card-body read, and the SSE notification stream — and
+`NotificationPreferencesService` is blocked on an upstream spec collision; all
+four are documented in [Deferrals](#deferrals).
 
 ## Build
 
@@ -406,7 +411,7 @@ section card builder, the Owncast player tag, real-time SSE-backed
 notifications with the full KaTeX font set inlined for the sandboxed card preview,
 the HttpOnly-cookie auth model (no browser-held bearer, see
 [Request authentication](#request-authentication-httponly-cookie-no-browser-held-bearer)),
-a typed ng-openapi-gen client (one service migrated so far — see
+a typed ng-openapi-gen client (eight of nine datastore services migrated — see
 [Deferrals](#deferrals)), baseline nginx security headers, a GitLab
 `test → build → pentest` pipeline, and a growing Playwright + BDD e2e harness
 (early-stage — see [`e2e/README.md`](e2e/README.md)).
@@ -415,7 +420,7 @@ This remote sits inside the wider HugMesh platform's shared ecosystem baseline
 and SSO model:
 
 - **SSO via Casdoor (the auth model).** Sign-in is performed by
-  [`login-ui`](https://github.com/hugmesh-net/login-ui) as a Casdoor OIDC
+  [`hugmesh-login-ui`](https://github.com/hugmesh/hugmesh-login-ui) as a Casdoor OIDC
   authorization-code (PKCE) redirect; **hugmesh-user-bff-api**
   performs the server-side code→token exchange and holds per-session JWT
   custody/refresh. This browser holds **no token at all** — the BFF sets the
@@ -488,7 +493,7 @@ those are called out explicitly rather than left in a separate list.
   (splits on the first colon, strips at most one leading space) rather than
   requiring an exact `"data: "` prefix.
 - ✅ **Notification toast (host-shell) — shipped in
-  [`hugmesh-host-shell`](https://github.com/hugmesh-net/hugmesh-host-shell).**
+  [`hugmesh-host-shell`](https://github.com/hugmesh/hugmesh-host-shell).**
   `NotificationToastService` subscribes to the same SSE stream and renders a
   toast when a real-time notification arrives, independently of this remote
   (separate module-federation bundle). This remote's `unreadCount$` signal
@@ -511,28 +516,44 @@ those are called out explicitly rather than left in a separate list.
 
 ## Deferrals
 
-- **Typed client migration is one-of-nine.** The generated `ng-openapi-gen`
-  client (`src/app/api`) is wired into `UserProfileService` (profile +
-  home-guide) only. `CardsService`, `BlockService`, `SelfSilenceService`,
-  `ConnectedClientsService`, `PreferencesService`, `SessionsService`,
-  `NotificationsService`, and `NotificationPreferencesService` still hand-roll
-  `HttpClient` calls against `/bff/user/**` directly, even though the
-  generated `src/app/api/services/*` + `src/app/api/fn/*` already cover every
-  one of those endpoints. Migrating each is mechanical but not yet done —
-  a good first contribution (see the note in `src/app/cards.service.ts`).
+- **Typed client migration is eight-of-nine.** The generated `ng-openapi-gen`
+  client (`src/app/api`) is wired into `UserProfileService`, `CardsService`,
+  `BlockService`, `SelfSilenceService`, `ConnectedClientsService`,
+  `PreferencesService`, `SessionsService`, and `NotificationsService`. What is
+  still hand-rolled, and why:
+  - **`NotificationPreferencesService` (whole service).** user-bff-api has two
+    distinct nested records both named `PreferenceUpsert`
+    (`UserPreferencesController`'s `{key, value}` and
+    `NotificationPreferenceController`'s `{category, enabled}`) and springdoc
+    collapses them into one `#/components/schemas/PreferenceUpsert`. The
+    generated `put1()` is therefore typed `{key, value}` and would send the
+    wrong body to a controller that requires `category` + `enabled`. Fix the
+    ambiguity on the BFF (e.g. `@Schema(name = …)`), re-run `npm run gen:spec`,
+    then migrate. Also noted while migrating the rest: the spec and the
+    controller both return `Map<String, Boolean>` here, not the
+    `NotificationPreference[]` this service models — a separate defect.
+  - **`UserProfileService.uploadAvatar`.** `multipart/form-data` file posts are
+    not modelled cleanly by ng-openapi-gen.
+  - **`CardsService.readBody`.** The BFF declares that response as
+    `application/octet-stream` / `format: byte`, so the generated
+    `fn/cards/body.ts` requests `responseType: 'blob'` while typing the result
+    `string` — the Edit pre-fill would get a `Blob` where it expects text.
+  - **`NotificationsService.startLive`.** The `text/event-stream` endpoint has
+    no generated counterpart, and needs `fetch()` + `ReadableStream` for the
+    cookie-authenticated stream anyway.
 
 ## Related HugMesh repositories
 
-This remote is one piece of the larger [HugMesh](https://github.com/hugmesh-net)
+This remote is one piece of the larger [HugMesh](https://github.com/hugmesh)
 platform. Repositories referenced throughout this document:
 
 | Repository | Role |
 | --- | --- |
-| [`hugmesh-host-shell`](https://github.com/hugmesh-net/hugmesh-host-shell) | The shell application that federates and mounts this and every other remote at runtime |
-| [`hugmesh-user-bff-api`](https://github.com/hugmesh-net/hugmesh-user-bff-api) | This remote's paired backend-for-frontend — the `/bff/user/**` surface |
-| [`login-ui`](https://github.com/hugmesh-net/login-ui) | Performs the Casdoor OIDC sign-in redirect on behalf of every remote |
-| [`hugmesh-auth-core`](https://github.com/hugmesh-net/hugmesh-auth-core) | Shared account/session/MFA/Casdoor-admin library consumed by the user and admin BFFs |
-| [`hugmesh-generator`](https://github.com/hugmesh-net/hugmesh-generator) | Platform code generator and shared CI templates, including the centralized pen-test stage this repo's pipeline extends |
+| [`hugmesh-host-shell`](https://github.com/hugmesh/hugmesh-host-shell) | The shell application that federates and mounts this and every other remote at runtime |
+| [`hugmesh-user-bff-api`](https://github.com/hugmesh/hugmesh-user-bff-api) | This remote's paired backend-for-frontend — the `/bff/user/**` surface |
+| [`hugmesh-login-ui`](https://github.com/hugmesh/hugmesh-login-ui) | Performs the Casdoor OIDC sign-in redirect on behalf of every remote |
+| [`hugmesh-auth-core`](https://github.com/hugmesh/hugmesh-auth-core) | Shared account/session/MFA/Casdoor-admin library consumed by the user and admin BFFs |
+| [`hugmesh-generator`](https://github.com/hugmesh/hugmesh-generator) | Platform code generator and shared CI templates, including the centralized pen-test stage this repo's pipeline extends |
 
 ## Contributing
 

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, from } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { UserPreferencesService } from './api/services/user-preferences.service';
 import { MediaPoisonMode as GenMediaPoisonMode } from './api/models/media-poison-mode';
 import { MEDIA_POISON_MODE } from './api/models/media-poison-mode-array';
 
@@ -65,21 +65,29 @@ export type PreferencesMap = Record<string, string>;
  * subscribe to {@link prefs$} and receive the updated map after each write
  * without an additional fetch.
  *
+ * <p><b>ng-openapi-gen migration:</b> this service now DELEGATES to the generated,
+ * typed {@link UserPreferencesService} (under {@code src/app/api}, generated from
+ * the user-bff-api OpenAPI spec) instead of hand-rolling {@code HttpClient} URLs —
+ * following the {@link UserProfileService} reference migration. The generated
+ * client calls the SAME same-origin {@code /bff/user/**} paths (its
+ * {@code rootUrl} defaults to '') through {@code HttpClient}, so the wire
+ * behaviour is unchanged.
+ *
  * Endpoints (user-bff-api `UserPreferencesController`):
- * - `GET /bff/user/preferences` → full resolved map (server defaults merged in)
- * - `PUT /bff/user/preferences` → `{ key, value }` upsert → returns updated map
+ * - `GET /bff/user/preferences` → full resolved map (server defaults merged in) → `UserPreferencesService.get()`
+ * - `PUT /bff/user/preferences` → `{ key, value }` upsert → returns updated map → `put({body})`
  *
  * The owner is ALWAYS the JWT subject (server-enforced); a user can only ever
- * read/write THEIR OWN preferences. Uses HttpClient so the auth interceptor
- * sends the HttpOnly `bff_` session cookie automatically.
+ * read/write THEIR OWN preferences. The generated client is built on HttpClient,
+ * so the auth interceptor still sends the HttpOnly `bff_` session cookie
+ * automatically.
  *
  * @see {@link PreferencesComponent} — the primary consumer of this service.
  * @see {@link PREF_MEDIA_POISON_DEFAULT} — the only preference key currently surfaced in the UI.
  */
 @Injectable({ providedIn: 'root' })
 export class PreferencesService {
-  private readonly http = inject(HttpClient);
-  private readonly base = '/bff/user/preferences';
+  private readonly prefsApi = inject(UserPreferencesService);
 
   private readonly prefsSubject = new BehaviorSubject<PreferencesMap | null>(null);
 
@@ -98,10 +106,10 @@ export class PreferencesService {
    * @returns An Observable that emits the full {@link PreferencesMap}.
    */
   load(): Observable<PreferencesMap> {
-    return this.http
-      .get<PreferencesMap>(this.base)
+    return from(this.prefsApi.get()).pipe(
       // Push the loaded map so any open subscriber on prefs$ updates.
-      .pipe(tap((p) => this.prefsSubject.next(p)));
+      tap((p) => this.prefsSubject.next(p)),
+    );
   }
 
   /**
@@ -114,9 +122,9 @@ export class PreferencesService {
    * @returns An Observable that emits the updated full {@link PreferencesMap}.
    */
   set(key: string, value: string): Observable<PreferencesMap> {
-    return this.http
-      .put<PreferencesMap>(this.base, { key, value })
+    return from(this.prefsApi.put({ body: { key, value } })).pipe(
       // Push the updated map so the component reflects any server-side normalisation.
-      .pipe(tap((p) => this.prefsSubject.next(p)));
+      tap((p) => this.prefsSubject.next(p)),
+    );
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, from } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
+import { SelfBlockService } from './api/services/self-block.service';
 
 /**
  * One self-block belonging to the caller, matched field-for-field to the
@@ -58,10 +58,21 @@ export interface RecommendAck {
  * subscribe to {@link blocks$} and receive refreshed data after each mutation
  * without needing a manual re-fetch at the call site.
  *
+ * <p><b>ng-openapi-gen migration:</b> this service now DELEGATES to the generated,
+ * typed {@link SelfBlockService} (under {@code src/app/api}, generated from the
+ * user-bff-api OpenAPI spec) instead of hand-rolling {@code HttpClient} URLs —
+ * following the {@link UserProfileService} reference migration. The generated
+ * client calls the SAME same-origin {@code /bff/user/**} paths (its
+ * {@code rootUrl} defaults to '') through {@code HttpClient}, so the wire
+ * behaviour — and the auth interceptor that attaches the HttpOnly `bff_` session
+ * cookie — are unchanged. This service keeps its OWN public {@link UserBlock} /
+ * {@link BlockAck} / {@link RecommendAck} types so the components consuming it
+ * need no change; the generated model is bridged at the delegation boundary.
+ *
  * Endpoints (user-bff-api `BlockController`):
- * - `GET    /bff/user/blocks`                   → {@link list}
- * - `POST   /bff/user/blocks`                   → {@link block}
- * - `DELETE /bff/user/blocks/{id}`              → {@link unblock}
+ * - `GET    /bff/user/blocks`                   → {@link list}     → `SelfBlockService.mine()`
+ * - `POST   /bff/user/blocks`                   → {@link block}    → `block({body})`
+ * - `DELETE /bff/user/blocks/{id}`              → {@link unblock}  → `unblock({id})`
  * - `POST   /bff/user/recommend-instance-block` → {@link recommendInstanceBlock}
  *
  * @see {@link SelfBlockComponent} — the primary consumer of this service.
@@ -69,8 +80,7 @@ export interface RecommendAck {
  */
 @Injectable({ providedIn: 'root' })
 export class BlockService {
-  private readonly http = inject(HttpClient);
-  private readonly base = '/bff/user';
+  private readonly blocksApi = inject(SelfBlockService);
 
   private readonly blocksSubject = new BehaviorSubject<UserBlock[]>([]);
 
@@ -87,10 +97,11 @@ export class BlockService {
    * @returns An Observable that emits the block list (empty array when none exist).
    */
   list(): Observable<UserBlock[]> {
-    return this.http
-      .get<UserBlock[]>(`${this.base}/blocks`)
+    return from(this.blocksApi.mine()).pipe(
+      map((blocks) => blocks as unknown as UserBlock[]),
       // Coerce null (empty 204 body) to [] and push the latest list into the subject.
-      .pipe(tap((blocks) => this.blocksSubject.next(blocks ?? [])));
+      tap((blocks) => this.blocksSubject.next(blocks ?? [])),
+    );
   }
 
   /**
@@ -103,10 +114,11 @@ export class BlockService {
    * @returns An Observable that emits the {@link BlockAck} from the BFF.
    */
   block(target: string, platform: BlockPlatform): Observable<BlockAck> {
-    return this.http
-      .post<BlockAck>(`${this.base}/blocks`, { target, platform })
+    return from(this.blocksApi.block({ body: { target, platform } })).pipe(
+      map((ack) => ack as unknown as BlockAck),
       // Refresh the block list so the new entry appears immediately.
-      .pipe(tap(() => this.list().subscribe()));
+      tap(() => this.list().subscribe()),
+    );
   }
 
   /**
@@ -117,10 +129,10 @@ export class BlockService {
    * @returns An Observable that completes when the BFF confirms deletion.
    */
   unblock(id: string): Observable<void> {
-    return this.http
-      .delete<void>(`${this.base}/blocks/${encodeURIComponent(id)}`)
+    return from(this.blocksApi.unblock({ id })).pipe(
       // Refresh the block list so the removed entry disappears.
-      .pipe(tap(() => this.list().subscribe()));
+      tap(() => this.list().subscribe()),
+    );
   }
 
   /**
@@ -133,9 +145,8 @@ export class BlockService {
    * @returns An Observable that emits the {@link RecommendAck} from the BFF.
    */
   recommendInstanceBlock(instance: string, reason: string): Observable<RecommendAck> {
-    return this.http.post<RecommendAck>(`${this.base}/recommend-instance-block`, {
-      instance,
-      reason,
-    });
+    return from(this.blocksApi.recommendInstanceBlock({ body: { instance, reason } })).pipe(
+      map((ack) => ack as unknown as RecommendAck),
+    );
   }
 }

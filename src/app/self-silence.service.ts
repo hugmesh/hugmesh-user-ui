@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, from } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
+import { SelfSilenceService as GenSelfSilenceService } from './api/services/self-silence.service';
 
 /**
  * One self-silence belonging to the caller, matched field-for-field to the
@@ -52,18 +52,28 @@ export interface EmailModAck {
  * subscribe to {@link silence$} and receive live updates after each activation or
  * cancellation.
  *
+ * <p><b>ng-openapi-gen migration:</b> this service now DELEGATES to the generated,
+ * typed {@link GenSelfSilenceService} (under {@code src/app/api}, generated from
+ * the user-bff-api OpenAPI spec) instead of hand-rolling {@code HttpClient} URLs —
+ * following the {@link UserProfileService} reference migration. The generated
+ * client calls the SAME same-origin {@code /bff/user/**} paths (its
+ * {@code rootUrl} defaults to '') through {@code HttpClient}, so the wire
+ * behaviour — and the auth interceptor that attaches the HttpOnly `bff_` session
+ * cookie — are unchanged. This service keeps its OWN public {@link SelfSilence} /
+ * {@link EmailModAck} types so {@link SelfSilenceComponent} needs no change; the
+ * generated model is bridged at the delegation boundary.
+ *
  * Endpoints (user-bff-api `SelfSilenceController`):
- * - `GET  /bff/user/self-silence/status`    → {@link status} (200 + body | 204 → null)
- * - `POST /bff/user/self-silence/activate`  → {@link activate}
- * - `POST /bff/user/self-silence/cancel`    → {@link cancel} (204)
- * - `POST /bff/user/self-silence/email-mod` → {@link emailMod}
+ * - `GET  /bff/user/self-silence/status`    → {@link status} (200 + body | 204 → null) → `status1$Response()`
+ * - `POST /bff/user/self-silence/activate`  → {@link activate} → `activate({body})`
+ * - `POST /bff/user/self-silence/cancel`    → {@link cancel} (204) → `cancel()`
+ * - `POST /bff/user/self-silence/email-mod` → {@link emailMod} → `emailMod({body})`
  *
  * @see {@link SelfSilenceComponent} — the primary consumer of this service.
  */
 @Injectable({ providedIn: 'root' })
 export class SelfSilenceService {
-  private readonly http = inject(HttpClient);
-  private readonly base = '/bff/user/self-silence';
+  private readonly silenceApi = inject(GenSelfSilenceService);
 
   private readonly silenceSubject = new BehaviorSubject<SelfSilence | null>(null);
 
@@ -78,20 +88,20 @@ export class SelfSilenceService {
    * {@link SelfSilence}; HTTP 204 (no active silence) → `null`. Pushes the result
    * onto {@link silence$}.
    *
-   * We observe the full HTTP response (not just the body) so we can distinguish
-   * a 204 with no body from a 200 with a null body, and always emit `SelfSilence | null`.
+   * We take the generated client's `$Response` variant (the full
+   * {@code StrictHttpResponse}, not just the body) so we can distinguish a 204
+   * with no body from a 200 with a null body, and always emit
+   * `SelfSilence | null`.
    *
    * @returns An Observable that emits the active silence or `null`.
    */
   status(): Observable<SelfSilence | null> {
-    return this.http
-      .get<SelfSilence | null>(`${this.base}/status`, { observe: 'response' })
-      .pipe(
-        // 204 = no active silence; any other 2xx body is the active SelfSilence.
-        map((resp) => (resp.status === 204 ? null : resp.body)),
-        // Push the normalised value so any open subscriber on silence$ updates.
-        tap((s) => this.silenceSubject.next(s)),
-      );
+    return from(this.silenceApi.status1$Response()).pipe(
+      // 204 = no active silence; any other 2xx body is the active SelfSilence.
+      map((resp) => (resp.status === 204 ? null : (resp.body as unknown as SelfSilence))),
+      // Push the normalised value so any open subscriber on silence$ updates.
+      tap((s) => this.silenceSubject.next(s)),
+    );
   }
 
   /**
@@ -103,10 +113,13 @@ export class SelfSilenceService {
    * @returns An Observable that emits the created {@link SelfSilence}.
    */
   activate(expiresAt: string, reason?: string): Observable<SelfSilence> {
-    return this.http
-      .post<SelfSilence>(`${this.base}/activate`, { expiresAt, reason: reason ?? null })
+    // An omitted `reason` and an explicit null are equivalent to the BFF: its
+    // ActivateRequest record binds a missing property to a null String.
+    return from(this.silenceApi.activate({ body: { expiresAt, reason } })).pipe(
+      map((s) => s as unknown as SelfSilence),
       // Push the server-confirmed silence so the component can reflect the new state.
-      .pipe(tap((s) => this.silenceSubject.next(s)));
+      tap((s) => this.silenceSubject.next(s)),
+    );
   }
 
   /**
@@ -117,10 +130,10 @@ export class SelfSilenceService {
    * @returns An Observable that completes (void) when the BFF confirms cancellation.
    */
   cancel(): Observable<void> {
-    return this.http
-      .post<void>(`${this.base}/cancel`, null)
+    return from(this.silenceApi.cancel()).pipe(
       // Clear local state so the component immediately reflects the cancellation.
-      .pipe(tap(() => this.silenceSubject.next(null)));
+      tap(() => this.silenceSubject.next(null)),
+    );
   }
 
   /**
@@ -132,6 +145,10 @@ export class SelfSilenceService {
    * @returns An Observable that emits the {@link EmailModAck} from the BFF.
    */
   emailMod(reason?: string): Observable<EmailModAck> {
-    return this.http.post<EmailModAck>(`${this.base}/email-mod`, { reason: reason ?? null });
+    // As in activate(): an omitted `reason` is the same as an explicit null to
+    // the BFF's EmailModRequest record.
+    return from(this.silenceApi.emailMod({ body: { reason } })).pipe(
+      map((ack) => ack as unknown as EmailModAck),
+    );
   }
 }

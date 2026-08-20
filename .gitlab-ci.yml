@@ -8,7 +8,7 @@
 # jobs from the generator. ONE source of truth across all onboarded repos; the
 # thin `pentest:*` jobs below `extends:` these. See memory hugmesh-pentest-standard.
 include:
-  - project: 'HugMesh/hugmesh-generator'
+  - project: 'hugmesh/hugmesh-generator'
     ref: main
     file: '/tests/pentest/ci/pentest-stage.gitlab-ci.yml'
 
