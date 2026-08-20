@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, flush } from '@angular/core/testing';
 import { CardEditorComponent } from './card-editor.component';
 import { decodeDocument, emptySection, encodeDocument } from './card-sections';
 import { PROVIDED_TAGS } from './card-tags';
@@ -237,5 +237,86 @@ describe('CardEditorComponent (draggable section builder)', () => {
       expect(component.source().markdown).toContain('legacy body');
       expect(component.source().css).toBe('c');
     });
+  });
+
+  describe('CDK drag preview styling (overlay lives outside the component subtree)', () => {
+    /**
+     * CDK builds the drag preview by DEEP-CLONING the dragged root element and
+     * appending the clone to `document.body` (top layer, via the popover API) —
+     * outside this component's DOM subtree. Emulated view encapsulation is
+     * ATTRIBUTE-based, not position-based, so the clone carries the same
+     * `_ngcontent-*` attribute and the component's `.section-card` /
+     * `.cdk-drag-preview` rules keep matching, while the `--hug-*` theme tokens
+     * reach it by normal inheritance from `:root` (supplied by src/styles.scss
+     * standalone, and by the host shell once federated).
+     *
+     * That is an implementation detail of CDK, so it is pinned here: if a CDK
+     * bump ever wrapped the preview or rebuilt it from a template instead, the
+     * drop-shadow polish would silently stop applying and this would fail.
+     */
+    function startDrag(): HTMLElement | null {
+      const card = el.querySelector<HTMLElement>('.section-card')!;
+      const handle = el.querySelector<HTMLElement>('[data-testid="drag-0"]')!;
+      const at = card.getBoundingClientRect();
+      // `buttons`/`detail` must be non-zero: CDK ignores a mousedown with
+      // neither as a synthetic screen-reader click and never starts a drag.
+      const send = (type: string, target: EventTarget, x: number, y: number) =>
+        target.dispatchEvent(
+          new MouseEvent(type, {
+            bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0, buttons: 1, detail: 1,
+          }),
+        );
+      send('mousedown', handle, at.left + 5, at.top + 5);
+      send('mousemove', document, at.left + 40, at.top + 60); // past dragStartThreshold
+      return document.querySelector<HTMLElement>('.cdk-drag-preview');
+    }
+
+    /**
+     * Release the pointer AND drain CDK's drop animation. `.cdk-drag-animating`
+     * gives the preview a 200ms transform transition, so CDK only runs
+     * `_cleanupDragArtifacts` on a timer after the drop — without flushing it
+     * that cleanup lands after the fixture is destroyed and CDK throws on a
+     * null root element.
+     */
+    function endDrag() {
+      document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+      flush();
+    }
+
+    beforeEach(() => {
+      component.sections.set([
+        { ...emptySection(), title: 'First' },
+        { ...emptySection(), title: 'Second' },
+      ]);
+      fixture.detectChanges();
+    });
+
+    it('appends the preview outside the component subtree but keeps its encapsulation attribute', fakeAsync(() => {
+      const preview = startDrag();
+      expect(preview).withContext('CDK did not create a drag preview').toBeTruthy();
+      expect(el.contains(preview!)).toBe(false); // genuinely outside this component's DOM
+      const card = el.querySelector<HTMLElement>('.section-card')!;
+      const ngContent = card.getAttributeNames().find((a) => a.startsWith('_ngcontent-'));
+      expect(ngContent).withContext('component is not emulated-encapsulated').toBeTruthy();
+      expect(preview!.hasAttribute(ngContent!)).toBe(true);
+      endDrag();
+    }));
+
+    it('applies the drop-shadow polish and matches the in-list card chrome', fakeAsync(() => {
+      const card = el.querySelector<HTMLElement>('.section-card')!;
+      const cardStyle = getComputedStyle(card);
+      const preview = startDrag();
+      const style = getComputedStyle(preview!);
+      // The .cdk-drag-preview rule's own polish actually lands...
+      expect(style.boxShadow).not.toBe('none');
+      // ...and the shared .section-card chrome is not lost on the way to body,
+      // including the --hug-* tokens it resolves by inheritance.
+      expect(style.backgroundColor).toBe(cardStyle.backgroundColor);
+      expect(style.borderTopColor).toBe(cardStyle.borderTopColor);
+      expect(style.borderTopWidth).toBe(cardStyle.borderTopWidth);
+      expect(style.borderRadius).toBe(cardStyle.borderRadius);
+      expect(style.padding).toBe(cardStyle.padding);
+      endDrag();
+    }));
   });
 });

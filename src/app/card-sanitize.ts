@@ -294,90 +294,6 @@ function scopeOne(sel: string, scope: string): string {
   return `${scope} ${sel}`;
 }
 
-/**
- * Minimal, safe Markdown → HTML renderer for the preview/body. Supports the
- * subset the toolbar emits: ATX headings, bold/italic, inline code, links,
- * unordered/ordered lists, blockquotes and paragraphs. All text is
- * HTML-escaped FIRST, so raw `<script>` typed into the markdown is rendered as
- * inert text — and the whole result is passed through {@link sanitizeHtml}
- * anyway. Deliberately tiny (no raw-HTML passthrough) rather than a full
- * CommonMark engine.
- */
-export function renderMarkdown(md: string): string {
-  const escaped = escapeHtml(md ?? '');
-  const lines = escaped.split(/\r?\n/);
-  const html: string[] = [];
-  let listType: 'ul' | 'ol' | null = null;
-  let paragraph: string[] = [];
-
-  const flushPara = () => {
-    if (paragraph.length) {
-      html.push(`<p>${inline(paragraph.join(' '))}</p>`);
-      paragraph = [];
-    }
-  };
-  const closeList = () => {
-    if (listType) {
-      html.push(`</${listType}>`);
-      listType = null;
-    }
-  };
-
-  for (const line of lines) {
-    const heading = /^(#{1,6})\s+(.*)$/.exec(line);
-    const ulItem = /^[-*]\s+(.*)$/.exec(line);
-    const olItem = /^\d+\.\s+(.*)$/.exec(line);
-    const quote = /^>\s?(.*)$/.exec(line);
-
-    if (heading) {
-      flushPara();
-      closeList();
-      const level = heading[1].length;
-      html.push(`<h${level}>${inline(heading[2])}</h${level}>`);
-    } else if (ulItem) {
-      flushPara();
-      if (listType !== 'ul') {
-        closeList();
-        listType = 'ul';
-        html.push('<ul>');
-      }
-      html.push(`<li>${inline(ulItem[1])}</li>`);
-    } else if (olItem) {
-      flushPara();
-      if (listType !== 'ol') {
-        closeList();
-        listType = 'ol';
-        html.push('<ol>');
-      }
-      html.push(`<li>${inline(olItem[1])}</li>`);
-    } else if (quote) {
-      flushPara();
-      closeList();
-      html.push(`<blockquote>${inline(quote[1])}</blockquote>`);
-    } else if (line.trim() === '') {
-      flushPara();
-      closeList();
-    } else {
-      closeList();
-      paragraph.push(line.trim());
-    }
-  }
-  flushPara();
-  closeList();
-  return html.join('\n');
-}
-
-/** Inline markdown: links, bold, italic, code. Operates on already-escaped text. */
-function inline(text: string): string {
-  return text
-    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, label, url) =>
-      isSafeUrl(url, false) ? `<a href="${url}">${label}</a>` : label,
-    )
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>');
-}
-
 /** Escape the five HTML-significant characters. */
 export function escapeHtml(s: string): string {
   return (s ?? '')
@@ -448,18 +364,6 @@ ${scopedKatexCss()}
 ${css}
 </style></head>
 <body><div class="card-root">${bodyHtml}</div></body></html>`;
-}
-
-/**
- * Legacy single-body preview (markdown + scoped CSS). Not called by the current
- * section-based {@link CardEditorComponent} (which uses {@link buildCardPreview}
- * exclusively) — retained with its dedicated test coverage in case a plain
- * single-body/markdown entry point returns; the markdown is rendered, then run
- * through the full safe pipeline so provided tags + math also work here.
- */
-export function buildPreviewDoc(markdown: string, userCss: string): string {
-  const body = renderSafeCardHtml(renderMarkdown(markdown));
-  return wrapPreviewDoc(body, userCss);
 }
 
 /**
