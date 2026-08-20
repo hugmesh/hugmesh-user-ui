@@ -184,9 +184,14 @@ the regenerated client.
 
 `ng-openapi-gen.json` reads `openapi.json` and writes typed models/services to
 `src/app/api` (`skipJsonSuffix`, `enumStyle: alias`). The hand-written
-`*.service.ts` datastore services delegate to these generated typed services
-(the `UserProfileService` profile + home-guide feature is migrated; the remaining
-services are queued for migration — see [Deferrals](#deferrals)).
+`*.service.ts` datastore services delegate to these generated typed services —
+eight of nine are migrated (`UserProfileService`, `CardsService`, `BlockService`,
+`SelfSilenceService`, `ConnectedClientsService`, `PreferencesService`,
+`SessionsService`, `NotificationsService`). Three calls stay hand-rolled for
+reasons the generator cannot cover — the multipart avatar upload, the
+octet-stream card-body read, and the SSE notification stream — and
+`NotificationPreferencesService` is blocked on an upstream spec collision; all
+four are documented in [Deferrals](#deferrals).
 
 ## Build
 
@@ -391,7 +396,7 @@ section card builder, the Owncast player tag, real-time SSE-backed
 notifications with a KaTeX font subset inlined for the sandboxed card preview,
 the HttpOnly-cookie auth model (no browser-held bearer, see
 [Request authentication](#request-authentication-httponly-cookie-no-browser-held-bearer)),
-a typed ng-openapi-gen client (one service migrated so far — see
+a typed ng-openapi-gen client (eight of nine datastore services migrated — see
 [Deferrals](#deferrals)), baseline nginx security headers, a GitLab
 `test → build → pentest` pipeline, and a growing Playwright + BDD e2e harness
 (early-stage — see [`e2e/README.md`](e2e/README.md)).
@@ -513,15 +518,31 @@ those are called out explicitly rather than left in a separate list.
   `document.body` during a drag is outside the component's view encapsulation, so
   its drop-shadow polish is best-effort; reordering itself works fully via
   pointer, the drag handle, and the Move up/down buttons.
-- **Typed client migration is one-of-nine.** The generated `ng-openapi-gen`
-  client (`src/app/api`) is wired into `UserProfileService` (profile +
-  home-guide) only. `CardsService`, `BlockService`, `SelfSilenceService`,
-  `ConnectedClientsService`, `PreferencesService`, `SessionsService`,
-  `NotificationsService`, and `NotificationPreferencesService` still hand-roll
-  `HttpClient` calls against `/bff/user/**` directly, even though the
-  generated `src/app/api/services/*` + `src/app/api/fn/*` already cover every
-  one of those endpoints. Migrating each is mechanical but not yet done —
-  a good first contribution (see the note in `src/app/cards.service.ts`).
+- **Typed client migration is eight-of-nine.** The generated `ng-openapi-gen`
+  client (`src/app/api`) is wired into `UserProfileService`, `CardsService`,
+  `BlockService`, `SelfSilenceService`, `ConnectedClientsService`,
+  `PreferencesService`, `SessionsService`, and `NotificationsService`. What is
+  still hand-rolled, and why:
+  - **`NotificationPreferencesService` (whole service).** user-bff-api has two
+    distinct nested records both named `PreferenceUpsert`
+    (`UserPreferencesController`'s `{key, value}` and
+    `NotificationPreferenceController`'s `{category, enabled}`) and springdoc
+    collapses them into one `#/components/schemas/PreferenceUpsert`. The
+    generated `put1()` is therefore typed `{key, value}` and would send the
+    wrong body to a controller that requires `category` + `enabled`. Fix the
+    ambiguity on the BFF (e.g. `@Schema(name = …)`), re-run `npm run gen:spec`,
+    then migrate. Also noted while migrating the rest: the spec and the
+    controller both return `Map<String, Boolean>` here, not the
+    `NotificationPreference[]` this service models — a separate defect.
+  - **`UserProfileService.uploadAvatar`.** `multipart/form-data` file posts are
+    not modelled cleanly by ng-openapi-gen.
+  - **`CardsService.readBody`.** The BFF declares that response as
+    `application/octet-stream` / `format: byte`, so the generated
+    `fn/cards/body.ts` requests `responseType: 'blob'` while typing the result
+    `string` — the Edit pre-fill would get a `Blob` where it expects text.
+  - **`NotificationsService.startLive`.** The `text/event-stream` endpoint has
+    no generated counterpart, and needs `fetch()` + `ReadableStream` for the
+    cookie-authenticated stream anyway.
 - **`renderMarkdown`/`buildPreviewDoc` (`card-sanitize.ts`) — dead-code
   candidate, deliberately NOT removed here.** Grep confirms `CardEditorComponent`
   (the only editor shipped) calls `buildCardPreview` exclusively; the
