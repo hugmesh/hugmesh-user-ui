@@ -28,6 +28,7 @@
   --hug-accent:      #7c4dff; /* backgrounds/borders only — 3.22:1 as text */
   --hug-accent-soft: #b388ff; /*  7.38:1 AAA — use this for accent text */
   --hug-success:     #4caf50;
+  --hug-warning:     #ffb74d; /* 11.4:1 AAA — "acknowledged but NOT applied" warnings (e.g. stubbed IdP writes) */
   --hug-error:       #ff6b6b;
 }
 
