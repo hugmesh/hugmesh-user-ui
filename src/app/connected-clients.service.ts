@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, from } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
+import { ConnectedClientsService as GenConnectedClientsService } from './api/services/connected-clients.service';
 
 /**
  * One connected app or device belonging to the caller, matched field-for-field to
@@ -42,16 +42,26 @@ export interface ConnectedClient {
  * Backed by a {@link BehaviorSubject} so {@link ConnectedAppsComponent} can
  * subscribe to {@link clients$} and receive fresh data after each revocation.
  *
+ * <p><b>ng-openapi-gen migration:</b> this service now DELEGATES to the generated,
+ * typed {@link GenConnectedClientsService} (under {@code src/app/api}, generated
+ * from the user-bff-api OpenAPI spec) instead of hand-rolling {@code HttpClient}
+ * URLs — following the {@link UserProfileService} reference migration. The
+ * generated client calls the SAME same-origin {@code /bff/user/**} paths (its
+ * {@code rootUrl} defaults to '') through {@code HttpClient}, so the wire
+ * behaviour — and the auth interceptor that attaches the HttpOnly `bff_` session
+ * cookie — are unchanged. This service keeps its OWN public
+ * {@link ConnectedClient} type so {@link ConnectedAppsComponent} needs no change;
+ * the generated model is bridged at the delegation boundary.
+ *
  * Endpoints (user-bff-api `ConnectedClientsController`):
- * - `GET    /bff/user/connected-clients`      → {@link list}
- * - `DELETE /bff/user/connected-clients/{id}` → {@link revoke}
+ * - `GET    /bff/user/connected-clients`      → {@link list}   → `GenConnectedClientsService.mine1()`
+ * - `DELETE /bff/user/connected-clients/{id}` → {@link revoke} → `revoke({id})`
  *
  * @see {@link ConnectedAppsComponent} — the primary consumer of this service.
  */
 @Injectable({ providedIn: 'root' })
 export class ConnectedClientsService {
-  private readonly http = inject(HttpClient);
-  private readonly base = '/bff/user/connected-clients';
+  private readonly clientsApi = inject(GenConnectedClientsService);
 
   private readonly clientsSubject = new BehaviorSubject<ConnectedClient[]>([]);
 
@@ -69,9 +79,9 @@ export class ConnectedClientsService {
    * @returns An Observable that emits the client list (empty array when none exist).
    */
   list(): Observable<ConnectedClient[]> {
-    return this.http.get<ConnectedClient[] | null>(this.base).pipe(
+    return from(this.clientsApi.mine1()).pipe(
       // Coerce null (e.g. 204 no-content) to an empty array.
-      map((clients) => clients ?? []),
+      map((clients) => (clients ?? []) as unknown as ConnectedClient[]),
       // Push the normalised list into the BehaviorSubject so any open subscriber
       // receives the update without needing to call list() themselves.
       tap((clients) => this.clientsSubject.next(clients)),
@@ -87,6 +97,8 @@ export class ConnectedClientsService {
    * @returns An Observable that emits the BFF's revocation-result envelope.
    */
   revoke(id: string): Observable<Record<string, unknown>> {
-    return this.http.delete<Record<string, unknown>>(`${this.base}/${encodeURIComponent(id)}`);
+    return from(this.clientsApi.revoke({ id })).pipe(
+      map((result) => result as Record<string, unknown>),
+    );
   }
 }
