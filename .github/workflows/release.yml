@@ -17,7 +17,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: hugmesh-net/hugmesh-user-ui
+  IMAGE_NAME: hugmesh/hugmesh-user-ui
 
 jobs:
   build-and-push:
