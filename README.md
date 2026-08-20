@@ -1,6 +1,6 @@
 # hugmesh-user-ui
 
-The self-service **user console** for [HugMesh](https://github.com/hugmesh-net), a
+The self-service **user console** for [HugMesh](https://github.com/hugmesh), a
 federated community platform with Matrix/Mastodon interoperability. This is
 where a signed-in member manages their own profile and avatar, publishes
 "cards" (sandboxed rich mini-pages), controls their block list and visibility,
@@ -8,8 +8,8 @@ manages connected external clients, and reads notifications — always scoped to
 their own account, never anyone else's.
 
 It ships as an **Angular 22 native-federation remote**, paired with the
-[`hugmesh-user-bff-api`](https://github.com/hugmesh-net/hugmesh-user-bff-api)
-backend-for-frontend. The [`hugmesh-host-shell`](https://github.com/hugmesh-net/hugmesh-host-shell)
+[`hugmesh-user-bff-api`](https://github.com/hugmesh/hugmesh-user-bff-api)
+backend-for-frontend. The [`hugmesh-host-shell`](https://github.com/hugmesh/hugmesh-host-shell)
 host federates this remote's exposed `USER_ROUTES` at runtime and mounts them
 at the user role-home, so they resolve to:
 
@@ -400,7 +400,7 @@ This remote sits inside the wider HugMesh platform's shared ecosystem baseline
 and SSO model:
 
 - **SSO via Casdoor (the auth model).** Sign-in is performed by
-  [`login-ui`](https://github.com/hugmesh-net/login-ui) as a Casdoor OIDC
+  [`hugmesh-login-ui`](https://github.com/hugmesh/hugmesh-login-ui) as a Casdoor OIDC
   authorization-code (PKCE) redirect; **hugmesh-user-bff-api**
   performs the server-side code→token exchange and holds per-session JWT
   custody/refresh. This browser holds **no token at all** — the BFF sets the
@@ -473,7 +473,7 @@ those are called out explicitly rather than left in a separate list.
   (splits on the first colon, strips at most one leading space) rather than
   requiring an exact `"data: "` prefix.
 - ✅ **Notification toast (host-shell) — shipped in
-  [`hugmesh-host-shell`](https://github.com/hugmesh-net/hugmesh-host-shell).**
+  [`hugmesh-host-shell`](https://github.com/hugmesh/hugmesh-host-shell).**
   `NotificationToastService` subscribes to the same SSE stream and renders a
   toast when a real-time notification arrives, independently of this remote
   (separate module-federation bundle). This remote's `unreadCount$` signal
@@ -535,16 +535,16 @@ those are called out explicitly rather than left in a separate list.
 
 ## Related HugMesh repositories
 
-This remote is one piece of the larger [HugMesh](https://github.com/hugmesh-net)
+This remote is one piece of the larger [HugMesh](https://github.com/hugmesh)
 platform. Repositories referenced throughout this document:
 
 | Repository | Role |
 | --- | --- |
-| [`hugmesh-host-shell`](https://github.com/hugmesh-net/hugmesh-host-shell) | The shell application that federates and mounts this and every other remote at runtime |
-| [`hugmesh-user-bff-api`](https://github.com/hugmesh-net/hugmesh-user-bff-api) | This remote's paired backend-for-frontend — the `/bff/user/**` surface |
-| [`login-ui`](https://github.com/hugmesh-net/login-ui) | Performs the Casdoor OIDC sign-in redirect on behalf of every remote |
-| [`hugmesh-auth-core`](https://github.com/hugmesh-net/hugmesh-auth-core) | Shared account/session/MFA/Casdoor-admin library consumed by the user and admin BFFs |
-| [`hugmesh-generator`](https://github.com/hugmesh-net/hugmesh-generator) | Platform code generator and shared CI templates, including the centralized pen-test stage this repo's pipeline extends |
+| [`hugmesh-host-shell`](https://github.com/hugmesh/hugmesh-host-shell) | The shell application that federates and mounts this and every other remote at runtime |
+| [`hugmesh-user-bff-api`](https://github.com/hugmesh/hugmesh-user-bff-api) | This remote's paired backend-for-frontend — the `/bff/user/**` surface |
+| [`hugmesh-login-ui`](https://github.com/hugmesh/hugmesh-login-ui) | Performs the Casdoor OIDC sign-in redirect on behalf of every remote |
+| [`hugmesh-auth-core`](https://github.com/hugmesh/hugmesh-auth-core) | Shared account/session/MFA/Casdoor-admin library consumed by the user and admin BFFs |
+| [`hugmesh-generator`](https://github.com/hugmesh/hugmesh-generator) | Platform code generator and shared CI templates, including the centralized pen-test stage this repo's pipeline extends |
 
 ## Contributing
 
