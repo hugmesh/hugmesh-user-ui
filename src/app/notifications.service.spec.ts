@@ -101,8 +101,12 @@ describe('NotificationsService', () => {
   });
 
   it('list() pushes the result to notifications$ so subscribers see the update', async () => {
-    firstValueFrom(service.list());
+    // Await the list() call itself: the service delegates to the generated
+    // client, whose Promise resolves (and only then pushes onto the subject)
+    // one microtask after the response is flushed.
+    const promise = firstValueFrom(service.list());
     http.expectOne('/bff/user/notifications').flush([n1]);
+    await promise;
     const current = await firstValueFrom(service.notifications$);
     expect(current).toEqual([n1]);
   });
@@ -114,8 +118,9 @@ describe('NotificationsService', () => {
   });
 
   it('unreadCount$ reflects the number of notifications without a readAt', async () => {
-    firstValueFrom(service.list());
+    const promise = firstValueFrom(service.list());
     http.expectOne('/bff/user/notifications').flush([n1, n2]); // n1 unread, n2 read
+    await promise;
     expect(await firstValueFrom(service.unreadCount$)).toBe(1);
   });
 
