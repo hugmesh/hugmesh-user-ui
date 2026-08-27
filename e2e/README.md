@@ -84,6 +84,14 @@ Drop a feature's `@cluster` tag, export the seed-user passwords
 `E2E_ADMIN_PASSWORD`, `E2E_SUPERADMIN_PASSWORD`, or a single `E2E_PASSWORD`),
 point `E2E_BASE_URL` at the host front door, then `npm run bdd`.
 
+The per-user `E2E_<ROLE>_PASSWORD` / shared `E2E_PASSWORD` env vars above are
+optional overrides, not requirements: `tests/helpers/roles.ts` (`passwordFor()`)
+falls back to the run-state `.e2e-credentials` file written by
+hugmesh-generator's `make stack-seed` (`$E2E_CREDENTIALS_FILE`, or a
+`.e2e-credentials` found by walking up from cwd). There is no built-in literal
+password — if nothing resolves, the suite throws naming `make stack-seed`
+rather than silently authenticating with a guessable default.
+
 Live seed prerequisites the features assume:
 
 - `erin` carries the Matrix PLATFORM role (`ROLE_MATRIX`) — the
