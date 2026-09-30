@@ -128,8 +128,8 @@ function findUpward(filename: string, dir: string): string | undefined {
 function credentialsFilePath(): string {
   return (
     process.env['E2E_CREDENTIALS_FILE']
-    ?? findUpward('.e2e-credentials', process.cwd())
-    ?? path.join(process.cwd(), '.e2e-credentials')
+    || findUpward('.e2e-credentials', process.cwd())
+    || path.join(process.cwd(), '.e2e-credentials')
   );
 }
 
@@ -139,18 +139,25 @@ function credentialsFilePath(): string {
  * in that repo — no quoting, no `export` keyword, so it also sources with
  * `set -a; . file; set +a` and loads via `docker compose --env-file`).
  *
- * A missing or unreadable file is the expected, common case — a fresh
- * checkout before anyone has run `make stack-seed` — so this returns an empty
- * map rather than throwing; the caller turns "nothing resolved" into one clear
- * error instead of letting an `ENOENT` stack trace stand in for it.
+ * A MISSING file (`ENOENT`) is the expected, common case — a fresh checkout
+ * before anyone has run `make stack-seed` — so this returns an empty map
+ * rather than throwing; the caller turns "nothing resolved" into one clear
+ * error. Any other read error (e.g. `EACCES` on a root-owned mode-600 file
+ * left by a sudo'd `make e2e`) is rethrown: reporting it as "key not found"
+ * would point the user at the wrong remedy.
  */
 function readCredentialsFile(filePath: string): Map<string, string> {
   const values = new Map<string, string>();
   let raw: string;
   try {
     raw = fs.readFileSync(filePath, 'utf8');
-  } catch {
-    return values;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return values;
+    }
+    throw new Error(
+      `cannot read the run-state credentials file ${filePath}: ${(err as Error).message}`,
+    );
   }
   for (const line of raw.split('\n')) {
     const trimmed = line.trim();
