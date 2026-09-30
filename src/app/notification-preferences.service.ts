@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, from } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
+import { NotificationPreferencesService as GeneratedNotificationPreferencesApi } from './api/services/notification-preferences.service';
 import type { NotificationCategory } from './notifications.service';
 
 /**
@@ -24,34 +24,25 @@ export interface NotificationPreference {
  * can subscribe to {@link prefs$} and receive the updated list after each write
  * without an additional fetch.
  *
- * Endpoints (user-bff-api `NotificationPreferencesController`):
- * - `GET /bff/user/notification-preferences` → all four category preferences
- * - `PUT /bff/user/notification-preferences` → `{ category, enabled }` upsert
+ * Endpoints (user-bff-api `NotificationPreferenceController`):
+ * - `GET /bff/user/notification-preferences` → `{ [category]: enabled }` map → generated `get1()`
+ * - `PUT /bff/user/notification-preferences` → `{ category, enabled }` upsert (schema
+ *   `NotificationPreferenceUpsert`) → returns the resolved map → generated `put1()`
  *
- * <p><b>NOT migrated to the generated ng-openapi-gen client</b> — the last of the
- * nine datastore services still hand-rolling `HttpClient`, and deliberately so.
- * The blocker is upstream in the spec, not here: user-bff-api declares TWO
- * distinct nested records both named `PreferenceUpsert` —
- * `UserPreferencesController.PreferenceUpsert` (`{key, value}`) and
- * `NotificationPreferenceController.PreferenceUpsert` (`{category, enabled}`) —
- * and springdoc collapses them into ONE
- * `#/components/schemas/PreferenceUpsert`. The committed `openapi.json` therefore
- * describes THIS endpoint's PUT body as `{key, value}`, so the generated
- * `src/app/api/services/notification-preferences.service.ts` `put1()` is typed —
- * and would serialise — the wrong shape for a controller that requires
- * `category` + `enabled`. Migrating needs the BFF to disambiguate the two schemas
- * first (e.g. `@Schema(name = "NotificationPreferenceUpsert")`), then a
- * `npm run gen:spec` here. Noted while migrating the other eight: the same spec
- * (and the controller) says this endpoint returns a `Map<String, Boolean>`, not
- * the `NotificationPreference[]` modelled below — a separate defect from the
- * client migration, and not addressed here.
+ * <p><b>ng-openapi-gen migration:</b> delegates to the generated, typed
+ * {@link GeneratedNotificationPreferencesApi} (under `src/app/api`) instead of hand-rolling
+ * `HttpClient`. This was blocked until user-bff-api gave its two nested `PreferenceUpsert`
+ * records distinct schema names (before that the spec typed this PUT's body as `{key, value}`).
+ *
+ * <p>The BFF returns a `Map<String, Boolean>` for both calls, NOT a list of rows. This
+ * service converts that map into the {@link NotificationPreference} rows its consumers use, so
+ * {@link prefs$} keeps its shape.
  *
  * @see {@link NotificationPreferencesComponent} — primary consumer of this service.
  */
 @Injectable({ providedIn: 'root' })
 export class NotificationPreferencesService {
-  private readonly http = inject(HttpClient);
-  private readonly base = '/bff/user/notification-preferences';
+  private readonly api = inject(GeneratedNotificationPreferencesApi);
 
   private readonly prefsSubject = new BehaviorSubject<NotificationPreference[] | null>(null);
 
@@ -69,39 +60,50 @@ export class NotificationPreferencesService {
    * @returns An Observable that emits the full {@link NotificationPreference} array.
    */
   load(): Observable<NotificationPreference[]> {
-    return this.http
-      .get<NotificationPreference[]>(this.base)
+    return from(this.api.get1()).pipe(
+      map(toRows),
       // Push the loaded list so any open subscriber on prefs$ updates.
-      .pipe(tap((prefs) => this.prefsSubject.next(prefs)));
+      tap((prefs) => this.prefsSubject.next(prefs)),
+    );
   }
 
   /**
-   * Upsert a single notification preference. Returns the updated preference row.
+   * Upsert a single notification preference. Returns the resolved row for `category`.
    * Note: 'account-restriction' is forced-on; the BFF ignores `enabled: false` for it.
    *
-   * Updates the cached BehaviorSubject with the server's response once the PUT
+   * Updates the cached BehaviorSubject with the server's resolved view once the PUT
    * resolves (this service does not itself write an optimistic value before the
    * request completes; see {@link NotificationPreferencesComponent.onToggle} for
    * the component-level optimistic update + revert-on-failure logic).
    *
    * @param category The notification category to update.
    * @param enabled  Whether to opt in to notifications for that category.
-   * @returns An Observable that emits the updated {@link NotificationPreference}.
+   * @returns An Observable that emits the resolved {@link NotificationPreference}.
    */
   set(
     category: NotificationCategory,
     enabled: boolean,
   ): Observable<NotificationPreference> {
-    return this.http
-      .put<NotificationPreference>(this.base, { category, enabled })
-      .pipe(
-        // Replace the matching entry in the cached list with the server's response.
-        tap((updated) => {
-          const current = this.prefsSubject.value ?? [];
-          this.prefsSubject.next(
-            current.map((p) => (p.category === updated.category ? updated : p)),
-          );
-        }),
-      );
+    return from(this.api.put1({ body: { category, enabled } })).pipe(
+      map((view) => {
+        const rows = toRows(view);
+        this.prefsSubject.next(rows);
+        // The BFF echoes the whole resolved view; a view missing the row we just wrote
+        // would be a contract break, so fail rather than invent a value.
+        const row = rows.find((r) => r.category === category);
+        if (!row) {
+          throw new Error(`notification-preferences PUT response has no '${category}' entry`);
+        }
+        return row;
+      }),
+    );
   }
+}
+
+/** Convert the BFF's `{ [category]: enabled }` view into rows. */
+function toRows(view: { [key: string]: boolean }): NotificationPreference[] {
+  return Object.entries(view).map(([category, enabled]) => ({
+    category: category as NotificationCategory,
+    enabled,
+  }));
 }
