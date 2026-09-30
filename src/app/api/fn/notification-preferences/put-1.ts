@@ -7,10 +7,10 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { PreferenceUpsert } from '../../models/preference-upsert';
+import { NotificationPreferenceUpsert } from '../../models/notification-preference-upsert';
 
 export interface Put1$Params {
-      body: PreferenceUpsert
+      body: NotificationPreferenceUpsert
 }
 
 export function put1(http: HttpClient, rootUrl: string, params: Put1$Params, context?: HttpContext): Observable<StrictHttpResponse<{

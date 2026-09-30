@@ -411,7 +411,7 @@ section card builder, the Owncast player tag, real-time SSE-backed
 notifications with the full KaTeX font set inlined for the sandboxed card preview,
 the HttpOnly-cookie auth model (no browser-held bearer, see
 [Request authentication](#request-authentication-httponly-cookie-no-browser-held-bearer)),
-a typed ng-openapi-gen client (eight of nine datastore services migrated — see
+a typed ng-openapi-gen client (all nine datastore services migrated; the remaining gaps are under
 [Deferrals](#deferrals)), baseline nginx security headers, a GitLab
 `test → build → pentest` pipeline, and a growing Playwright + BDD e2e harness
 (early-stage — see [`e2e/README.md`](e2e/README.md)).
@@ -516,22 +516,16 @@ those are called out explicitly rather than left in a separate list.
 
 ## Deferrals
 
-- **Typed client migration is eight-of-nine.** The generated `ng-openapi-gen`
-  client (`src/app/api`) is wired into `UserProfileService`, `CardsService`,
-  `BlockService`, `SelfSilenceService`, `ConnectedClientsService`,
-  `PreferencesService`, `SessionsService`, and `NotificationsService`. What is
-  still hand-rolled, and why:
-  - **`NotificationPreferencesService` (whole service).** user-bff-api has two
-    distinct nested records both named `PreferenceUpsert`
-    (`UserPreferencesController`'s `{key, value}` and
-    `NotificationPreferenceController`'s `{category, enabled}`) and springdoc
-    collapses them into one `#/components/schemas/PreferenceUpsert`. The
-    generated `put1()` is therefore typed `{key, value}` and would send the
-    wrong body to a controller that requires `category` + `enabled`. Fix the
-    ambiguity on the BFF (e.g. `@Schema(name = …)`), re-run `npm run gen:spec`,
-    then migrate. Also noted while migrating the rest: the spec and the
-    controller both return `Map<String, Boolean>` here, not the
-    `NotificationPreference[]` this service models — a separate defect.
+- **Typed client migration is nine-of-nine, with two method-level gaps.** The
+  generated `ng-openapi-gen` client (`src/app/api`) is wired into every datastore
+  service, including `NotificationPreferencesService` (unblocked when user-bff-api
+  named its two `PreferenceUpsert` records `NotificationPreferenceUpsert` /
+  `UserPreferenceUpsert`). That service maps the BFF's `Map<String, Boolean>` view
+  onto `NotificationPreference[]` rows. Still hand-rolled, and why:
+  - **Do not blindly `npm run gen:spec`.** The BFF's committed spec currently
+    declares its JSON responses as `*/*`, which makes ng-openapi-gen request
+    `responseType: 'blob'`; a wholesale refresh breaks every generated call. The
+    notification schema change was therefore applied to `openapi.json` surgically.
   - **`UserProfileService.uploadAvatar`.** `multipart/form-data` file posts are
     not modelled cleanly by ng-openapi-gen.
   - **`CardsService.readBody`.** The BFF declares that response as
