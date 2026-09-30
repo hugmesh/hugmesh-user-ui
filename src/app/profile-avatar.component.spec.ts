@@ -15,8 +15,13 @@ describe('ProfileAvatarComponent', () => {
     visibility: 'internal',
     vanitySubdomainEnabled: false,
     screenReaderName: null,
-    avatarUrl: '/bff/user/profile/avatar/me.png',
+    // What the BFF really stores: an mxc:// Matrix media ref, which no browser can
+    // fetch. It is a presence flag for the view, never an <img src>.
+    avatarUrl: 'mxc://mesh.local/AvatarMediaIdMe',
   };
+
+  /** The BFF's same-origin, cookie-authenticated serve route for the picture. */
+  const SERVE_ROUTE = '/bff/user/profile/avatar/body';
 
   /** Build a fake <input type=file>-style change Event carrying one file. */
   function fileChangeEvent(file: File | null): Event {
@@ -57,13 +62,22 @@ describe('ProfileAvatarComponent', () => {
     expect(el.querySelector('[data-testid="profile-avatar-image"]')).toBeNull();
   });
 
-  it('renders the current avatar image when one is set', async () => {
+  it('renders the current avatar from the BFF serve route when one is set', async () => {
     const fixture = await setup(withAvatar);
     const el: HTMLElement = fixture.nativeElement;
     const img = el.querySelector<HTMLImageElement>('[data-testid="profile-avatar-image"]');
     expect(img).not.toBeNull();
-    expect(img!.getAttribute('src')).toContain('me.png');
+    // No upload yet in this session, so no ?v= cache-buster.
+    expect(img!.getAttribute('src')).toBe(SERVE_ROUTE);
     expect(el.querySelector('[data-testid="profile-avatar-placeholder"]')).toBeNull();
+  });
+
+  it('never puts the stored avatarUrl (an mxc:// ref) into the image src', async () => {
+    const fixture = await setup(withAvatar);
+    const el: HTMLElement = fixture.nativeElement;
+    const src = el.querySelector<HTMLImageElement>('[data-testid="profile-avatar-image"]')!.getAttribute('src')!;
+    expect(src).not.toContain(withAvatar.avatarUrl!);
+    expect(src).not.toContain('mxc:');
   });
 
   it('uploads through the service and adopts the returned profile on a valid image', async () => {
@@ -75,10 +89,13 @@ describe('ProfileAvatarComponent', () => {
     fixture.detectChanges();
 
     expect(profiles.uploadAvatar).toHaveBeenCalledWith(file);
-    expect(fixture.componentInstance.currentProfile()?.avatarUrl).toContain('me.png');
+    expect(fixture.componentInstance.currentProfile()?.avatarUrl).toBe(withAvatar.avatarUrl);
     expect(fixture.componentInstance.uploadError()).toBe('');
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.querySelector('[data-testid="profile-avatar-image"]')).not.toBeNull();
+    const img = el.querySelector<HTMLImageElement>('[data-testid="profile-avatar-image"]');
+    expect(img).not.toBeNull();
+    // A fresh upload busts the serve route's private 5-minute cache.
+    expect(img!.getAttribute('src')).toBe(`${SERVE_ROUTE}?v=1`);
   });
 
   it('rejects a non-image file with an error and does NOT call the service', async () => {
