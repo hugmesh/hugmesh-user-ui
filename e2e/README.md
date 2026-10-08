@@ -8,7 +8,9 @@ the proven `hugmesh-games/e2e` pattern and mirrors the merged wave-2b-1 PRs
 ## Ships dark (wave 2b)
 
 Every scenario that needs a live stack (host shell + `user-bff-api` + Casdoor
-seed) is tagged **`@cluster`** at the feature level. The default
+seed) is tagged **`@cluster`** at the feature level (18 of the 20 features; the
+two untagged ones, `profile-edit-client-side.feature` and
+`recommend-gate-client-side.feature`, need no backend). The default
 `playwright.config.ts` filters them out with `tags: 'not @cluster'`, so the
 **default run requires no cluster**. The harness still proves the Gherkin
 **compiles** and the scenarios are **discoverable** offline.
@@ -43,10 +45,18 @@ could not prove the features parse).
 | `features/self-service/profile-preferences-notifications.feature` | REAL persist round-trips (reload-and-readback, not just "the form submitted"): profile `displayName` save, `/preferences` `media.poison.default` select, notification-preferences toggles | USER-SITUATIONAL |
 | `features/self-service/profile-account-actions.feature` | the remaining backend-dependent profile fields (visibility/pronouns/timezone/vanity subdomain) as a reload-readback round-trip, plus avatar upload (`POST /bff/user/profile/avatar` → `avatarUrl` replaces the local preview) | USER-SITUATIONAL |
 | `features/self-service/notifications-seeded-inbox.feature` | notification inbox mark-as-read + unread-count, proven as a before/after **delta** over a REAL row created via the test-seed endpoint (ships dark behind `app.test-seed.enabled`) | USER-SITUATIONAL |
+| `features/self-service/recommend-gate-client-side.feature` | the recommend-instance-block form for a user WITHOUT a Matrix/Mastodon platform role: gate notice, `aria-disabled` plus `aria-describedby` helptext (not native `disabled`), and nothing is sent — ships **untagged**, no backend | USER-SITUATIONAL |
+| `features/self-service/cards-edit-delete.feature` | card Edit pre-fill restores the exact prior sections and CSS (`readBody` then `decodeDocument`); republish adds a version (a `versionDir` delta); Delete removes the row server-side, proven after a reload | USER-SITUATIONAL |
+| `features/self-service/home-guide-dismissal.feature` | the getting-started guide dismiss write, its persistence across a reload, show-again, and propagation to a second device; each scenario restores the guide | USER-SITUATIONAL |
+| `features/self-service/notification-preferences-delivery.feature` | the consequence of a toggle, not its stored value: a muted category is not delivered (seed reports `delivered=false` and the inbox never carries the row), and forced-on `account-restriction` is delivered after an attempted opt-out | USER-SITUATIONAL |
+| `features/self-service/profile-preferences-coverage.feature` | the fields the other persist suites skip: `gender`, an explicit `screenReaderName`, the `infra-impacting` and `feature-availability` categories, and `account-restriction` shown forced-on and locked | USER-SITUATIONAL |
+| `features/self-service/self-silence-ui-lifecycle.feature` | self-silence through the real form: local-to-ISO time conversion, future-time validation, active readback with wake time, the `aria-disabled` activate gate, cancel; the server status is re-read each time | USER-SITUATIONAL |
+| `features/self-service/sessions-lifecycle.feature` | the `/sessions` view: the "This device" marker, revoking through the UI, revoking another device's session signs that device out (its next `/bff` call returns 401), and a second user is denied revoking it (404) | USER-SITUATIONAL |
 | `features/multiuser/own-resource-management.feature` | two users manage their OWN lists concurrently; both REALLY publish cards; self-silence independence (one user hidden changes nothing for the other) | MULTIUSER-SITUATIONAL |
 | `features/cross-user/owner-subject-isolation.feature` | victim-creates-first DENYs on blocks/cards/connected-clients; self-silence subject-only independence; unauthenticated → 401 | CROSS-USER isolation |
 | `features/cross-user/preferences-notifications-isolation.feature` | preferences / notification-preferences / notifications are scoped EXCLUSIVELY from the JWT subject server-side (no addressable owner id to attack) — proven via two real parallel sessions each reading only their own resource | CROSS-USER isolation |
 | `features/cross-user/notifications-seeded-isolation.feature` | extends the isolation proof to an inbox that actually HAS a row (via the test-seed endpoint): victim-creates-first, each DENY paired with the victim's own unaffected re-read | CROSS-USER isolation |
+| `features/cross-user/platform-role-deny-floors.feature` | the API floors behind the disabled controls: a user without a platform role cannot create a matrix or mastodon self-block or start the moderation chain, and without an external-client role is refused the connected-clients list; each paired with its ALLOW contrast | CROSS-USER / platform roles |
 | `features/cross-user/elevated-role-owner-subject.feature` | mod/admin/superadmin get the SAME 404 as a plain user on another user's blocks/sessions/silence (owner==subject has no role override), plus the own-resource ALLOW halves | CROSS-USER / elevated roles |
 | `features/a11y/accessibility.feature` | skip-link/focusable main, named landmarks, polite live regions, describedby helptext, tab order | A11Y |
 
@@ -82,7 +92,8 @@ Drop a feature's `@cluster` tag, export the seed-user passwords
 (`E2E_ALICE_PASSWORD`, `E2E_BOB_PASSWORD`, `E2E_CAROL_PASSWORD`,
 `E2E_DAVE_PASSWORD`, `E2E_ERIN_PASSWORD`, `E2E_MOD_PASSWORD`,
 `E2E_ADMIN_PASSWORD`, `E2E_SUPERADMIN_PASSWORD`, or a single `E2E_PASSWORD`),
-point `E2E_BASE_URL` at the host front door, then `npm run bdd`.
+point `E2E_BASE_URL` at the host front door (default
+`https://host.docker.internal:8443`), then `npm run bdd`.
 
 The per-user `E2E_<ROLE>_PASSWORD` / shared `E2E_PASSWORD` env vars above are
 optional overrides, not requirements: `tests/helpers/roles.ts` (`passwordFor()`)
@@ -95,7 +106,12 @@ There is no built-in literal
 password — if nothing resolves, the suite throws naming `make stack-seed`
 rather than silently authenticating with a guessable default.
 
-Live seed prerequisites the features assume:
+Live seed prerequisites the features assume. `make stack-seed` seeds the
+personas `e2e-user`, `e2e-mod`, `e2e-admin` and `e2e-superadmin` (see
+`tests/stack/seed-e2e.sh` in hugmesh-generator). It does not create the
+usernames this suite logs in as (`alice`, `bob`, `carol`, `dave`, `erin`,
+`mod-user`, `admin-user`, `superadmin-user`); create them in Casdoor first.
+
 
 - `erin` carries the Matrix PLATFORM role (`ROLE_MATRIX`) — the
   recommend-instance-block endpoint is `hasAnyRole('MATRIX','MASTODON')`.
@@ -105,7 +121,7 @@ Live seed prerequisites the features assume:
 - `mod-user` / `admin-user` / `superadmin-user` carry the matching Casdoor
   roles (plus the `user` floor) and share alice's brand/domain.
 - `notifications-seeded-inbox.feature` and `notifications-seeded-isolation.feature`
-  need user-bff-api's `app.test-seed.enabled=true` (its `TestSeedNotificationController`
+  need user-bff-api's `app.test-seed.enabled=true` (env `APP_TEST_SEED_ENABLED=true`; its `TestSeedNotificationController`
   is the only user-reachable way to create a real notification row — the
   production writer is the `ROLE_SERVICE`-gated internal deliver endpoint,
   called by the hugmesh-actions reconciler, not a browser session).
