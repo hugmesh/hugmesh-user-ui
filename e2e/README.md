@@ -107,11 +107,14 @@ export `E2E_CREDENTIALS_FILE=<generator>/.e2e-credentials`.
 There is no built-in password. If nothing resolves, the suite throws and names
 `make stack-seed`, rather than log in with a guessable default.
 
-Live seed prerequisites the features assume. `make stack-seed` seeds the
-personas `e2e-user`, `e2e-mod`, `e2e-admin` and `e2e-superadmin` (see
-`tests/stack/seed-e2e.sh` in hugmesh-generator). It does not create the
-usernames this suite logs in as (`alice`, `bob`, `carol`, `dave`, `erin`,
-`mod-user`, `admin-user`, `superadmin-user`); create them in Casdoor first.
+Live seed prerequisites the features assume. `make stack-seed` seeds
+`e2e-user`, `e2e-mod`, `e2e-admin` and `e2e-superadmin`, plus Gmail-style users
+named `alice@gmail.com`, `bob@gmail.com`, `carol@gmail.com` and
+`dave@gmail.com` (`tests/stack/seed-e2e.sh` and `tests/e2e-extra-personas.sh` in
+hugmesh-generator). It does not define `erin`, `mod-user`, `admin-user` or
+`superadmin-user`. This suite types `alice`, `bob`, `carol`, `dave`, `erin`,
+`mod-user`, `admin-user` and `superadmin-user` into the login form, so make
+sure all eight exist in Casdoor before a live run.
 
 - `erin` carries the Matrix PLATFORM role (`ROLE_MATRIX`); the
   recommend-instance-block endpoint is `hasAnyRole('MATRIX','MASTODON')`.
