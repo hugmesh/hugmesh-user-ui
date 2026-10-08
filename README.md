@@ -52,7 +52,9 @@ across every HugMesh remote) exposes two modules under the remote name
 
 - `./routes` → `src/app/user.routes.ts` (`USER_ROUTES`) — the role-home surface.
 - `./profile` → `src/app/profile.component.ts` (`ProfileComponent`) — exposed
-  standalone so the host can mount the profile editor as a **modal** later.
+  standalone so the host can mount the profile editor as a **modal**. The host
+  does: `profile-modal.component.ts` in `hugmesh-host-shell` loads it with
+  `loadRemoteModule('user', './profile')`.
 
 The build emits `dist/user/browser/remoteEntry.json`, whose `exposes` entries
 the host consumes to lazy-load the routes / profile modal.
@@ -71,7 +73,7 @@ hugmesh-user-bff-api):
 
 | Service              | user-bff-api endpoints                                                                    |
 | -------------------- | ---------------------------------------------------------------------------------------- |
-| `UserProfileService`     | `GET/PUT /bff/user/profile` (carries `screenReaderName` + `avatarUrl`), `POST /bff/user/profile/{password,email}`, `POST /bff/user/profile/avatar` (multipart avatar upload), `GET/POST/DELETE /bff/user/home-guide[/dismiss]` |
+| `UserProfileService`     | `GET/PUT /bff/user/profile` (carries `screenReaderName` + `avatarUrl`), `POST /bff/user/profile/{password,email}`, `POST /bff/user/profile/avatar` (multipart avatar upload), `GET /bff/user/home-guide`, `POST/DELETE /bff/user/home-guide/dismiss` (query `?guide=`) |
 | `CardsService`           | `GET /bff/user/cards`, `GET /bff/user/cards/{slug}` (versions), `GET /bff/user/cards/{slug}/body` (current source, for Edit pre-fill), `PUT /bff/user/cards/{slug}` (octet-stream), `DELETE /bff/user/cards/{slug}` |
 | `BlockService`           | `GET/POST /bff/user/blocks`, `DELETE /bff/user/blocks/{id}`, `POST /bff/user/recommend-instance-block` |
 | `SelfSilenceService`     | `GET /bff/user/self-silence/status`, `POST /bff/user/self-silence/{activate,cancel,email-mod}` |
@@ -97,16 +99,23 @@ Requests made while the cookie is absent (not logged in) are still sent; the
 BFF rejects them with `401`.
 
 > ⚠️ **What actually authenticates the request.** Under the SSO model, login-ui
-> runs the Casdoor OIDC authorization-code (PKCE) redirect and
-> **hugmesh-user-bff-api** does the server-side code→token exchange and holds
-> per-session JWT custody/refresh; the browser **never sees the Casdoor JWT**,
-> and never sees the opaque `bff_` session token as script-readable state
-> either, only as an HttpOnly cookie. At the
-> edge, the gateway is a pure Casdoor-JWT OAuth2 resource server: a
-> pre-security exchange filter swaps the HttpOnly `bff_` cookie for the
-> internal custody JWT, then runs unchanged JWT validation + the data-driven
-> `gateway_route_access` role gate. So this remote's job is just to send the
-> cookie; the gateway, not the browser, presents the JWT downstream.
+> posts the username and password to `POST /bff/login`. **hugmesh-user-bff-api**
+> checks them against the internal Casdoor with a server-side PKCE flow, does
+> the code→token exchange and holds per-session JWT custody/refresh. The
+> browser is never redirected to Casdoor and **never sees the Casdoor JWT**; it
+> holds the opaque `bff_` session token only as an HttpOnly cookie
+> (`bff_session`). At the edge, the gateway is a pure Casdoor-JWT OAuth2
+> resource server. Two pre-security filters swap the cookie for the internal
+> custody JWT (`BffCookieToBearerWebFilter` turns the cookie into a bearer,
+> `BffJwtExchangeWebFilter` asks admin-bff for the JWT). Then unchanged JWT
+> validation and the data-driven `gateway_route_access` role gate run. So this
+> remote's job is just to send the cookie; the gateway, not the browser,
+> presents the JWT downstream.
+>
+> Both halves ship dark: user-bff's login path stays off until
+> `app.bff.oidc.enabled` is true (default `false`), and the gateway's exchange
+> stays off until `hugmesh.gateway.bff-exchange.enabled` is true (default
+> `false`).
 
 ```mermaid
 sequenceDiagram
@@ -114,7 +123,7 @@ sequenceDiagram
     participant Gateway as Gateway
     participant BFF as user-bff-api
     Browser->>Gateway: request, withCredentials true, HttpOnly bff_ cookie attached
-    Gateway->>Gateway: BffCookieToBearerWebFilter exchanges bff_ cookie for internal JWT
+    Gateway->>Gateway: BffCookieToBearerWebFilter and BffJwtExchangeWebFilter swap bff_ cookie for internal JWT
     Gateway->>Gateway: JWT validation and gateway_route_access role gate
     Gateway->>BFF: forwarded request carrying internal JWT
     BFF-->>Gateway: response, owner forced to JWT subject
@@ -124,9 +133,10 @@ sequenceDiagram
 The remaining session state (`id`, `label`, `provider`, `roles`,
 `registrationComplete` — **no token field**) is persisted to
 **`localStorage`** under the shared **`hug.session`** key, with cross-instance
-reconciliation over the **`snap-session-change`** broadcast contract
+reconciliation over the **`hug-session-change`** broadcast contract
 (`src/app/session.service.ts`) — the same key/broadcast every HugMesh UI
-uses. This is UI-only role-signal state for defence-in-depth menu/route
+uses. The legacy `snap-session-change` name is still listened to and
+dispatched, so a mixed-version rollout stays in sync. This is UI-only role-signal state for defence-in-depth menu/route
 gating (see [`SnapSession`](#cross-cutting-a11y-utilities-copied-per-remote));
 it carries nothing an attacker could replay against the BFF, so an earlier
 plan to move a bearer token out of `localStorage` no longer applies here —
@@ -172,26 +182,29 @@ npm run gen:spec     # refresh ./openapi.json from the BFF's COMMITTED spec, the
 ```
 
 **Deterministic spec source (no running server).** `hugmesh-user-bff-api`
-produces `src/main/resources/openapi/openapi.json` as a build artefact: its
-`OpenApiSpecDumpTest` (an ordinary `./mvnw test`) boots the context under the
-`test` profile, GETs `/v3/api-docs`, and writes a key-sorted, byte-stable spec.
+keeps `src/main/resources/openapi/openapi.json` as a committed contract: its
+`OpenApiSpecDumpTest` boots the context under the `test` profile, GETs
+`/v3/api-docs`, and normalises it to a key-sorted, byte-stable spec. By default
+the test only asserts that the committed file matches the live API; it writes
+the file only with `-Dopenapi.spec.write=true`.
 `gen:spec` copies that committed spec next door (default
 `../hugmesh-user-bff-api/...`, override with `USER_BFF_SPEC=/path/to/openapi.json`)
 and regenerates — replacing the old `gen:fetch` that curled a manually-run BFF on
-`localhost:8080` (not CI-friendly). To refresh after a BFF API change: re-run the
-BFF spec-dump test, commit the BFF spec, then `npm run gen:spec` here and commit
-the regenerated client.
+`localhost:8080` (not CI-friendly). To refresh after a BFF API change: run
+`./mvnw -Dtest=OpenApiSpecDumpTest -Dopenapi.spec.write=true test` in the BFF,
+commit the BFF spec, then `npm run gen:spec` here and commit the regenerated
+client.
 
 `ng-openapi-gen.json` reads `openapi.json` and writes typed models/services to
 `src/app/api` (`skipJsonSuffix`, `enumStyle: alias`). The hand-written
 `*.service.ts` datastore services delegate to these generated typed services —
-eight of nine are migrated (`UserProfileService`, `CardsService`, `BlockService`,
+all nine are migrated (`UserProfileService`, `CardsService`, `BlockService`,
 `SelfSilenceService`, `ConnectedClientsService`, `PreferencesService`,
-`SessionsService`, `NotificationsService`). Three calls stay hand-rolled for
-reasons the generator cannot cover — the multipart avatar upload, the
-octet-stream card-body read, and the SSE notification stream — and
-`NotificationPreferencesService` is blocked on an upstream spec collision; all
-four are documented in [Deferrals](#deferrals).
+`SessionsService`, `NotificationsService`, `NotificationPreferencesService`).
+Three calls stay hand-rolled for reasons the generator cannot cover — the
+multipart avatar upload, the octet-stream card-body read, and the SSE
+notification stream. `OwncastService` is hand-rolled too. See
+[Deferrals](#deferrals).
 
 ## Build
 
@@ -210,26 +223,38 @@ writes a JUnit report to **`test-results/results.xml`** (reporters
 `progress`/`kjhtml`/`junit`). The `ChromeHeadlessCI` launcher runs
 `--no-sandbox --disable-dev-shm-usage`.
 
-🚧 An end-to-end **Playwright + BDD (Gherkin)** harness lives alongside the unit
-specs. It's early-stage — its cluster-dependent scenarios are tagged off by
-default (see [`e2e/README.md`](e2e/README.md)) — and exercises the user-console
-surfaces against the federated host, growing toward the platform's full-stack
-SSO/security e2e coverage (see [Roadmap](#roadmap)).
+✅ An end-to-end **Playwright + BDD (Gherkin)** harness is merged alongside the
+unit specs (`e2e/`, 20 features). 18 of the features need a live stack and are
+tagged `@cluster`, which the default config filters out (see
+[`e2e/README.md`](e2e/README.md)); two client-side features run with no
+backend. It exercises the user-console surfaces against the federated host and
+is growing toward the platform's full-stack SSO/security e2e coverage (see
+[Roadmap](#roadmap)).
 
 ## Deploy
 
-`Dockerfile` builds the remote and serves `dist/user/browser` via nginx with
-`Access-Control-Allow-Origin "*"` (so the host can fetch `remoteEntry.json` and
-chunks cross-origin) and an SPA fallback to `/index.html`; `GET /healthz`
-returns `200`. ✅ The nginx config also emits baseline HTTP **security headers**
-on every response (`always`): `X-Content-Type-Options: nosniff`,
-`X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, and
-`Strict-Transport-Security` (HSTS, one year + `includeSubDomains`). Stricter
-policies (CSP, COEP/CORP, Permissions-Policy) are deliberately deferred to the
-live-cluster pass (per-UI tuning + browser validation). Runs as its own pod in
-the hugmesh-frontend namespace, fronted
-by the fe-gateway at `/user`. CI is **GitLab** (`.gitlab-ci.yml`) — the GitHub
-repo is pull-mirrored into in-cluster GitLab. There are **no GitHub Actions**.
+`Dockerfile` builds the remote (`--base-href=/user/`) and serves
+`dist/user/browser` via nginx with `Access-Control-Allow-Origin "*"` (so the
+host can fetch `remoteEntry.json` and chunks cross-origin) and an SPA fallback
+to `/index.html`; `GET /healthz` returns `200`. ✅ The nginx config also emits
+baseline HTTP **security headers** (`always`) on the app and on `/healthz`:
+`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: strict-origin-when-cross-origin`, and
+`Strict-Transport-Security` (HSTS, one year + `includeSubDomains`). App
+responses also carry a **nonce-based `Content-Security-Policy`**: nginx writes a
+fresh nonce into every `<script>` tag of `index.html`, with no
+`'unsafe-inline'` in `script-src`. Without its own CSP the gateway's fallback
+policy blocks the inline federation bootstrap and the page renders blank. The
+remaining stricter policies (COEP/CORP, Permissions-Policy) are deliberately
+deferred to the live-cluster pass (per-UI tuning + browser validation). The
+image also runs `docker-entrypoint.d/50-hug-theme.sh` at start: it writes
+`$HUG_THEME_CSS` (else `$SNAP_THEME_CSS`) to `/tmp/hug-theme.css`, which nginx
+serves at `/hug-theme.css` (and, for older documents, `/snap-theme.css`). Runs
+as its own pod in the hugmesh-frontend namespace, fronted by the fe-gateway at
+`/user`. CI is **GitLab** (`.gitlab-ci.yml`) — the GitHub repo is pull-mirrored
+into in-cluster GitLab. The only GitHub workflow is `.github/workflows/release.yml`:
+manual (`workflow_dispatch`), it builds the image and pushes it to GHCR. No CI
+runs on GitHub.
 
 ✅ The GitLab pipeline runs `stages: [test, e2e, build, pentest]`:
 
@@ -413,17 +438,17 @@ the HttpOnly-cookie auth model (no browser-held bearer, see
 [Request authentication](#request-authentication-httponly-cookie-no-browser-held-bearer)),
 a typed ng-openapi-gen client (all nine datastore services migrated; the remaining gaps are under
 [Deferrals](#deferrals)), baseline nginx security headers, a GitLab
-`test → build → pentest` pipeline, and a growing Playwright + BDD e2e harness
-(early-stage — see [`e2e/README.md`](e2e/README.md)).
+`test → e2e → build → pentest` pipeline, and a growing Playwright + BDD e2e
+harness (see [`e2e/README.md`](e2e/README.md)).
 
 This remote sits inside the wider HugMesh platform's shared ecosystem baseline
 and SSO model:
 
 - **SSO via Casdoor (the auth model).** Sign-in is performed by
-  [`hugmesh-login-ui`](https://github.com/hugmesh/hugmesh-login-ui) as a Casdoor OIDC
-  authorization-code (PKCE) redirect; **hugmesh-user-bff-api**
-  performs the server-side code→token exchange and holds per-session JWT
-  custody/refresh. This browser holds **no token at all** — the BFF sets the
+  [`hugmesh-login-ui`](https://github.com/hugmesh/hugmesh-login-ui), which posts
+  the credentials to `POST /bff/login`; **hugmesh-user-bff-api** runs the
+  Casdoor login and PKCE code→token exchange server-side and holds per-session
+  JWT custody/refresh (the account and session rows live in admin-bff). This browser holds **no token at all** — the BFF sets the
   session as an **HttpOnly `bff_` cookie** (script-unreadable) and the user
   never sees their own Casdoor JWT. The gateway is a pure Casdoor-JWT OAuth2
   resource server: a pre-security exchange filter swaps the `bff_` cookie for
@@ -437,11 +462,12 @@ and SSO model:
   account/session/MFA/Casdoor-admin infra extracted to the new
   **hugmesh-auth-core** artifact (consumed by user-bff + admin-bff). Account
   and session **data** still lives in admin-bff-db; user-bff reaches it via
-  admin-bff `/bff/internal` over mTLS + `X-Internal-Token`. None of this changes
-  this UI's contract: it talks `/bff/user/**` and carries the opaque session
-  bearer.
+  admin-bff `/bff/internal` with an `X-Internal-Token` header (and a client cert
+  when `hugmesh.mtls.client.enabled` is true). None of this changes
+  this UI's contract: it talks `/bff/user/**` and carries the `bff_` session
+  cookie.
 - **Backend baseline (for the paired BFF).** Spring Boot 4.0.7 / Spring Cloud
-  2025.1.2, on the shared `hugmesh-parent` (2.7.0) metapom +
+  2025.1.2, on the shared `hugmesh-parent` (2.8.0) metapom +
   `hugmesh-commons` + `hugmesh-auth-core`. Spring Cloud
   Gateway 5.0 route config now lives under
   `spring.cloud.gateway.server.webflux.routes` (the legacy
@@ -456,8 +482,9 @@ here**, marked per the status legend; a few items below ARE shipped here (✅)
 because they only became real once the platform-wide dependency landed —
 those are called out explicitly rather than left in a separate list.
 
-- 🚧 **End-to-end SSO + e2e** — login-ui Casdoor OIDC → user-bff custody →
-  opaque `bff_` session, with the gateway `bff_`→JWT exchange filter, is being
+- 🚧 **End-to-end SSO + e2e** — login-ui → user-bff native login (server-side
+  Casdoor PKCE) → custody → opaque `bff_` session, with the gateway `bff_`→JWT
+  exchange filter, is being
   driven live end-to-end (incl. the user-console e2e harness above). The
   interceptor + `SessionService` are this remote's client-side touchpoints.
 - ✅ **Bearer token removed from the browser (shipped here).** This remote is
@@ -516,7 +543,7 @@ those are called out explicitly rather than left in a separate list.
 
 ## Deferrals
 
-- **Typed client migration is nine-of-nine, with two method-level gaps.** The
+- **Typed client migration is nine-of-nine, with three method-level gaps.** The
   generated `ng-openapi-gen` client (`src/app/api`) is wired into every datastore
   service, including `NotificationPreferencesService` (unblocked when user-bff-api
   named its two `PreferenceUpsert` records `NotificationPreferenceUpsert` /
@@ -553,7 +580,7 @@ platform. Repositories referenced throughout this document:
 
 Issues and pull requests are welcome. Before opening a PR:
 
-1. Run `npm test` and, if you touched the e2e harness, `npx playwright test --list`
+1. Run `npm test` and, if you touched the e2e harness, `npx bddgen && npx playwright test --list`
    from `e2e/` (see [`e2e/README.md`](e2e/README.md)) to confirm the suites still
    pass/compile.
 2. Keep the sandboxing model in mind for any change touching card rendering —
