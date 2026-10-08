@@ -84,9 +84,7 @@ gateway fronts hugmesh-user-bff-api):
 | `NotificationsService`   | `GET /bff/user/notifications` (caller's in-app feed, newest-first, optional `?limit`), `POST /bff/user/notifications/{id}/read` (idempotent mark-read), `GET /bff/user/notifications/events` (real-time SSE push via `startLive()`/`stopLive()`). Exposes `unreadCount$` for a host-shell bell badge and `liveStatus$` (`idle`/`connecting`/`live`/`degraded`) so a consumer can say honestly when the feed isn't live. |
 | `NotificationPreferencesService` | `GET /bff/user/notification-preferences` (all four category prefs), `PUT /bff/user/notification-preferences` `{category, enabled}` upsert. The `account-restriction` category is forced-on (the BFF ignores `enabled:false` for it). |
 
-> The endpoint owner is ALWAYS the authenticated subject (server-enforced), so a
-> user can only read or write THEIR OWN profile, cards, blocks, self-silence,
-> preferences, clients, stream status, login sessions, and notifications.
+> The endpoint owner is ALWAYS the authenticated subject (server-enforced).
 
 ### Request authentication (HttpOnly cookie, no browser-held bearer)
 
@@ -112,9 +110,12 @@ the cookie is absent (not logged in) still go out, and the BFF rejects them with
 > remote only has to send the cookie. The gateway, not the browser, presents the
 > JWT downstream.
 >
-> Both halves ship dark. user-bff's login path stays off until
+> Both halves default to off in code. user-bff's login path stays off until
 > `app.bff.oidc.enabled` is true (default `false`). The gateway's exchange stays
 > off until `hugmesh.gateway.bff-exchange.enabled` is true (default `false`).
+> The local compose stack turns both on (`tests/stack/compose.local.yaml` in
+> hugmesh-generator: `HUGMESH_GATEWAY_BFF_EXCHANGE_ENABLED` for the fe-gateway,
+> `APP_BFF_OIDC_ENABLED` for user-bff-api).
 
 ```mermaid
 sequenceDiagram
@@ -430,9 +431,9 @@ stays stripped.
 
 ## Status
 
-Every route and feature described above this section is merged to `main` and
-ships in the production image. The Roadmap below is the part that is still a
-promise. The user console covers all
+Everything above, except the items marked 🚧 or 🔭, is merged to `main` and
+ships in the production image. The marked items are still promises. The user
+console covers all
 eleven role-home routes (profile incl. avatar upload, cards, blocks,
 recommend-instance-block, self-silence, connected-apps, sessions, preferences,
 notifications, notification-preferences) plus the sandboxed section card
@@ -449,17 +450,12 @@ This remote sits inside the wider HugMesh platform's shared ecosystem baseline
 and SSO model:
 
 - **SSO via Casdoor (the auth model).** Sign-in is done by
-  [`hugmesh-login-ui`](https://github.com/hugmesh/hugmesh-login-ui), which posts
-  the credentials to `POST /bff/login`. **hugmesh-user-bff-api** runs the
-  Casdoor login and PKCE code→token exchange server-side and holds per-session
-  JWT custody/refresh (the account and session rows live in admin-bff). This
-  browser holds **no token at all**: the BFF sets the session as an **HttpOnly
-  `bff_` cookie** (script-unreadable), and the user never sees their own Casdoor
-  JWT. The gateway is a pure Casdoor-JWT OAuth2 resource server. A pre-security
-  exchange filter swaps the `bff_` cookie for the internal custody JWT before JWT
-  validation and the data-driven `gateway_route_access` role gate
-  (`GatewayRouteAccessFilter`) run. ADMIN/GAME-MASTER bypass within their own
-  domain; SUPERADMIN is cross-domain. Cloudflare fronts production. **End-to-end
+  [`hugmesh-login-ui`](https://github.com/hugmesh/hugmesh-login-ui) and
+  **hugmesh-user-bff-api**, as described under
+  [Request authentication](#request-authentication-httponly-cookie-no-browser-held-bearer);
+  the account and session rows live in admin-bff. The data-driven
+  `gateway_route_access` role gate is `GatewayRouteAccessFilter`. ADMIN/GAME-MASTER
+  bypass within their own domain; SUPERADMIN is cross-domain. Cloudflare fronts production. **End-to-end
   SSO (incl. e2e) is in progress** platform-wide (see [Roadmap](#roadmap)).
 - **Login/session relocation.** Login, session, and account logic is being
   **relocated from admin-bff into user-bff**. The shared
