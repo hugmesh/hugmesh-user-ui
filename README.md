@@ -257,8 +257,8 @@ serves at `/hug-theme.css` (and, for older documents, at `/snap-theme.css`).
 The remote runs as its own pod in the hugmesh-frontend namespace, fronted by the
 fe-gateway at `/user`. CI is **GitLab** (`.gitlab-ci.yml`); the GitHub repo is
 pull-mirrored into in-cluster GitLab. The only GitHub workflow is
-`.github/workflows/release.yml`. It is manual (`workflow_dispatch`) and pushes
-the image to GHCR. No CI runs on GitHub.
+`.github/workflows/release.yml`, which publishes the image to GHCR (see
+[Releases](#releases)). No pull-request CI runs on GitHub.
 
 ✅ The GitLab pipeline runs `stages: [test, e2e, build, pentest]`:
 
@@ -278,6 +278,35 @@ the image to GHCR. No CI runs on GitHub.
   (delegates to the generator's `run-pentest.sh` against `DAST_TARGET_URL`)
   locally, so a dev can self-scan before pushing. It degrades to a note, and does
   not fail, when Docker or a target URL is absent.
+
+## Releases
+
+The version lives in `package.json` (and the root entries of
+`package-lock.json`, which must match). The current version is a beta,
+`0.3.0-beta.1`: the console is in the default mesh and has had live checks,
+but nothing is final yet. A fix during the beta raises the last number
+(`-beta.2`, `-beta.3`, ...).
+
+`.github/workflows/release.yml` publishes `ghcr.io/hugmesh/hugmesh-user-ui`:
+
+| Trigger | Image tags | Also |
+|---|---|---|
+| push to `main` | `main`, `sha-<12 hex>` | |
+| push of tag `v<version>` | `<version>`, `beta` (beta versions only), `sha-<12 hex>` | GitHub Release, marked prerelease and never "latest" |
+| manual run on `main` | same as a push to `main` | |
+| manual run on a `v<version>` tag | re-runs that release; an existing version tag is never rebuilt or overwritten | creates the GitHub Release only if it is missing |
+
+Every run first checks the version (a tag must be exactly `v` + the
+`package.json` version), then runs the unit suite, and only then builds and
+pushes. `latest` is never pushed. To cut a release: bump the version in
+`package.json` and `package-lock.json` in a PR, merge it, then tag the merge
+commit `v<version>` and push the tag.
+
+The jobs run on the self-hosted runner named by the repo variable
+`RUNS_ON_PUBLISH` (a JSON array such as `["self-hosted","Linux","X64"]`) only
+for `main` and `v*` tags; otherwise, and whenever that variable is unset, they
+run on hosted `ubuntu-latest`. The workflow has no pull-request trigger, so it
+never runs code from a fork.
 
 ## Sandboxed, draggable section card builder
 
