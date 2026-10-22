@@ -586,6 +586,11 @@ Issues and pull requests are welcome. Before opening a PR:
 3. Describe the change and, where relevant, which route(s) or datastore
    service(s) it affects.
 
+## Security
+
+Please report vulnerabilities privately, not in a public issue. See
+[`SECURITY.md`](SECURITY.md) for how.
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE).
