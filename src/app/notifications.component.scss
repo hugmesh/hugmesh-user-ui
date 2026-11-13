@@ -22,9 +22,7 @@
     height: 1.5rem;
     padding: 0 0.35rem;
     background: var(--hug-accent);
-    // Text on the accent FILL: --hug-text (#e8e8f0) is 3.94:1 on #7c4dff (WCAG
-    // 1.4.3); white is 4.81:1. Same --hug-accent-on convention as forum/wiki.
-    color: var(--hug-accent-on, #ffffff);
+    color: var(--hug-text);
     border-radius: 999px;
     font-size: 0.75rem;
     font-weight: 700;
