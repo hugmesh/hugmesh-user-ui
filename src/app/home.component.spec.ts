@@ -23,6 +23,27 @@ describe('HomeComponent', () => {
     });
   });
 
+  it('welcomes you to hugmesh.net, as it always did, when no theme names the domain', async () => {
+    profiles.loadHomeGuide.and.returnValue(of({ guide: 'home', dismissed: false }));
+    setup();
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('#home-heading')?.textContent?.trim()).toBe('Welcome to hugmesh.net');
+  });
+
+  it("welcomes you to the theme's own name (a domain with its own look)", async () => {
+    profiles.loadHomeGuide.and.returnValue(of({ guide: 'home', dismissed: false }));
+    document.documentElement.style.setProperty('--sd-header-content', "'Acme'");
+    try {
+      setup();
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.querySelector('#home-heading')?.textContent?.trim()).toBe('Welcome to Acme');
+    } finally {
+      document.documentElement.style.removeProperty('--sd-header-content');
+    }
+  });
+
   it('shows the getting-started guide on first visit (not dismissed)', async () => {
     profiles.loadHomeGuide.and.returnValue(of({ guide: 'home', dismissed: false }));
     setup();
