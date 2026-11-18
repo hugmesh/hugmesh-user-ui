@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { UserProfileService, HOME_GUIDE } from './user-profile.service';
+import { readBrandName } from './brand-name';
 
 /**
  * User role-home: the welcome / getting-started guide shown to ROLE_USER on
@@ -28,6 +29,10 @@ import { UserProfileService, HOME_GUIDE } from './user-profile.service';
   styleUrl: './home.component.scss',
 })
 export class HomeComponent implements OnInit {
+  /** What this page calls itself: the theme's wordmark (a domain with its own look), else
+   *  the name it always said. */
+  readonly brand = readBrandName('hugmesh.net');
+
   private readonly profiles = inject(UserProfileService);
 
   /**
